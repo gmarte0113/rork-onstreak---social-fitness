@@ -26,8 +26,7 @@
         "NSCameraUsageDescription": "OnStreak uses the camera so you can take daily accountability photos for your group.",
         "NSPhotoLibraryUsageDescription": "OnStreak needs access to your photo library so you can select progress photos.",
         "NSPhotoLibraryAddUsageDescription": "OnStreak can save your progress photos to your library.",
-        "NSMicrophoneUsageDescription": "OnStreak does not record audio; this permission is required by the camera module.",
-        "NSUserTrackingUsageDescription": "OnStreak does not track you across apps."
+        "NSMicrophoneUsageDescription": "OnStreak does not record audio; this permission is required by the camera module."
       }
     },
     "android": {
