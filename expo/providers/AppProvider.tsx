@@ -184,6 +184,7 @@ export type AppState = {
   activeEnrollment: Enrollment | null;
   hasSeenCreateGroupInfo: boolean;
   notificationsEnabled: boolean;
+  lastNameChangeAt: string | null;
 };
 
 function uid(): string {
@@ -229,6 +230,7 @@ const DEFAULT_STATE: AppState = {
   activeEnrollment: null,
   hasSeenCreateGroupInfo: false,
   notificationsEnabled: false,
+  lastNameChangeAt: null,
 };
 
 function daysBetween(a: string, b: string): number {
@@ -345,11 +347,11 @@ export const [AppProvider, useApp] = createContextHook(() => {
           .order("created_at", { ascending: false }),
         supabase
           .from(PROFILES_TABLE)
-          .select("name, goal, level, weight_unit")
+          .select("name, goal, level, weight_unit, last_name_change_at")
           .eq("user_id", uid)
           .maybeSingle(),
       ]);
-      const profile = profileRes.data as { name: string | null; goal: string | null; level: string | null; weight_unit: string | null } | null;
+      const profile = profileRes.data as { name: string | null; goal: string | null; level: string | null; weight_unit: string | null; last_name_change_at: string | null } | null;
       if (weightsRes.error) console.log("[AppProvider] fetch weights error", weightsRes.error.message);
       if (photosRes.error) console.log("[AppProvider] fetch photos error", photosRes.error.message);
       const weights: WeightEntry[] = (weightsRes.data ?? []).map((r: { date: string; weight_kg: number }) => ({
@@ -384,12 +386,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
         const profileLevel = (profile?.level as FitnessLevel | null) ?? null;
         const profileUnit = (profile?.weight_unit as WeightUnit | null) ?? null;
         const hasCompleteProfile = Boolean(profileName && profileGoal && profileLevel);
+        const profileLastNameChangeAt = profile?.last_name_change_at ?? null;
         const next: AppState = {
           ...prev,
           userName: prev.userName || profileName,
           goal: prev.goal ?? profileGoal,
           level: prev.level ?? profileLevel,
           weightUnit: profileUnit ?? prev.weightUnit,
+          lastNameChangeAt: profileLastNameChangeAt ?? prev.lastNameChangeAt,
           onboarded: prev.onboarded || hasCompleteProfile,
           weights: weights.length > 0 ? weights : prev.weights,
           beforePhoto: before && beforeUri ? { date: before.date, uri: beforeUri } : prev.beforePhoto,
@@ -489,6 +493,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
           completed_dates: s.completedDates,
           total_reps: s.totalReps,
           total_minutes: s.totalMinutes,
+          last_name_change_at: s.lastNameChangeAt,
           updated_at: new Date().toISOString(),
         };
         const { error } = await supabase
@@ -898,6 +903,29 @@ export const [AppProvider, useApp] = createContextHook(() => {
   const setUserName = useCallback(
     (name: string) => {
       persist((prev) => ({ ...prev, userName: name }));
+    },
+    [persist]
+  );
+
+  const updateDisplayName = useCallback(
+    async (name: string): Promise<{ ok: boolean; error?: string }> => {
+      const { validateDisplayName, canChangeDisplayName, NAME_CHANGE_COOLDOWN_MESSAGE } = await import("@/utils/displayName");
+      const result = validateDisplayName(name);
+      if (!result.valid) {
+        return { ok: false, error: result.error };
+      }
+      const current = stateRef.current;
+      const sameAsCurrent = current.userName.trim() === result.cleaned;
+      if (!sameAsCurrent && !canChangeDisplayName(current.lastNameChangeAt)) {
+        return { ok: false, error: NAME_CHANGE_COOLDOWN_MESSAGE };
+      }
+      const nowIso = new Date().toISOString();
+      persist((prev) => ({
+        ...prev,
+        userName: result.cleaned,
+        lastNameChangeAt: sameAsCurrent ? prev.lastNameChangeAt : nowIso,
+      }));
+      return { ok: true };
     },
     [persist]
   );
@@ -1874,6 +1902,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       setGoal,
       setLevel,
       setUserName,
+      updateDisplayName,
       resetAll,
       deleteAccount,
       setPremium,
@@ -1927,6 +1956,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       setGoal,
       setLevel,
       setUserName,
+      updateDisplayName,
       resetAll,
       deleteAccount,
       setPremium,

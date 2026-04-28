@@ -41,7 +41,13 @@ import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
 import type { FitnessLevel, Goal } from "@/constants/workouts";
 import type { WeightUnit } from "@/providers/AppProvider";
-import { containsProfanity, getProfanityError } from "@/utils/profanity";
+import {
+  validateDisplayName,
+  daysUntilNameChangeAvailable,
+  canChangeDisplayName,
+  NAME_CHANGE_COOLDOWN_MESSAGE,
+  DISPLAY_NAME_MAX,
+} from "@/utils/displayName";
 
 const GOAL_OPTIONS: {
   id: Goal;
@@ -67,7 +73,7 @@ export default function SettingsScreen() {
     setGoal,
     setLevel,
     setWeightUnit,
-    setUserName,
+    updateDisplayName,
     resetAll,
     deleteAccount,
   } = useApp();
@@ -426,10 +432,17 @@ export default function SettingsScreen() {
       <NameModal
         visible={nameOpen}
         current={state.userName}
+        lastNameChangeAt={state.lastNameChangeAt}
         onClose={() => setNameOpen(false)}
-        onSave={(n) => {
-          setUserName(n);
+        onSave={async (n) => {
+          const res = await updateDisplayName(n);
+          if (!res.ok) {
+            Alert.alert("Couldn’t update name", res.error ?? "Please try again.");
+            return { ok: false, error: res.error };
+          }
           setNameOpen(false);
+          Alert.alert("Name updated", "Your display name has been updated.");
+          return { ok: true };
         }}
       />
     </ScrollView>
@@ -624,31 +637,56 @@ function TimeModal({
 function NameModal({
   visible,
   current,
+  lastNameChangeAt,
   onClose,
   onSave,
 }: {
   visible: boolean;
   current: string;
+  lastNameChangeAt: string | null;
   onClose: () => void;
-  onSave: (name: string) => void;
+  onSave: (name: string) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const [name, setName] = useState<string>(current);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   React.useEffect(() => {
-    if (visible) setName(current);
+    if (visible) {
+      setName(current);
+      setSubmitting(false);
+    }
   }, [visible, current]);
 
-  const submit = () => {
-    const trimmed = name.trim();
-    if (trimmed.length < 1) {
-      Alert.alert("Name required", "Please enter your name.");
-      return;
+  const trimmed = name.trim();
+  const sameAsCurrent = trimmed === current.trim();
+  const cooldownDays = useMemo(
+    () => daysUntilNameChangeAvailable(lastNameChangeAt),
+    [lastNameChangeAt]
+  );
+  const cooldownActive = !sameAsCurrent && !canChangeDisplayName(lastNameChangeAt);
+
+  const validation = useMemo(() => {
+    if (trimmed.length === 0) {
+      return { valid: false as const, error: null as string | null };
     }
-    if (containsProfanity(trimmed)) {
-      Alert.alert("Choose another name", getProfanityError("username"));
-      return;
+    const v = validateDisplayName(trimmed);
+    if (v.valid) return { valid: true as const, error: null };
+    return { valid: false as const, error: v.error };
+  }, [trimmed]);
+
+  const inlineError: string | null = cooldownActive
+    ? `${NAME_CHANGE_COOLDOWN_MESSAGE} Try again in ${cooldownDays} day${cooldownDays === 1 ? "" : "s"}.`
+    : validation.error;
+
+  const canSave = !submitting && !sameAsCurrent && validation.valid && !cooldownActive;
+
+  const submit = async () => {
+    if (!canSave) return;
+    setSubmitting(true);
+    const res = await onSave(trimmed);
+    if (!res.ok) {
+      setSubmitting(false);
     }
-    onSave(trimmed);
   };
 
   return (
@@ -664,7 +702,7 @@ function NameModal({
       >
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.centerCard}>
-          <Text style={styles.sheetTitle}>Your name</Text>
+          <Text style={styles.sheetTitle}>Display name</Text>
           <TextInput
             value={name}
             onChangeText={setName}
@@ -673,26 +711,40 @@ function NameModal({
             placeholderTextColor={Colors.textDim}
             autoFocus
             autoCapitalize="words"
-            maxLength={24}
+            maxLength={DISPLAY_NAME_MAX}
             returnKeyType="done"
             onSubmitEditing={submit}
+            editable={!submitting}
             testID="name-edit-input"
           />
+          {inlineError ? (
+            <Text style={styles.nameError} testID="name-error">
+              {inlineError}
+            </Text>
+          ) : (
+            <Text style={styles.nameHelp}>
+              2–20 characters. You can change this once every 30 days.
+            </Text>
+          )}
           <View style={styles.centerActions}>
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={onClose}
               activeOpacity={0.85}
+              disabled={submitting}
             >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.saveBtn, { flex: 1 }]}
+              style={[styles.saveBtn, { flex: 1, opacity: canSave ? 1 : 0.5 }]}
               onPress={submit}
               activeOpacity={0.85}
+              disabled={!canSave}
               testID="save-name"
             >
-              <Text style={styles.saveBtnText}>Save</Text>
+              <Text style={styles.saveBtnText}>
+                {submitting ? "Saving…" : "Save"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1055,6 +1107,21 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 16,
     fontWeight: "800",
+  },
+  nameError: {
+    color: Colors.danger,
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: -8,
+    marginBottom: 14,
+    textAlign: "center",
+  },
+  nameHelp: {
+    color: Colors.textDim,
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 14,
+    textAlign: "center",
   },
   nameInput: {
     backgroundColor: Colors.surface,
