@@ -17,6 +17,13 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: Colors.bg },
+        animation: "shift",
+        transitionSpec: {
+          animation: "timing",
+          config: {
+            duration: 280,
+          },
+        },
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
