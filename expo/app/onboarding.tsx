@@ -74,6 +74,7 @@ import {
   restorePurchases,
 } from "@/lib/purchases";
 import { PRIVACY_URL, TERMS_URL } from "@/constants/legal";
+import { supabase } from "@/lib/supabase";
 
 type Step =
   | "welcome"
@@ -252,6 +253,25 @@ export default function Onboarding() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authProvider, setAuthProvider] = useState<"apple" | "google" | "email" | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const provider = data.user?.app_metadata?.provider as string | undefined;
+        if (cancelled) return;
+        if (provider === "apple" || provider === "google" || provider === "email") {
+          setAuthProvider((prev) => prev ?? (provider as "apple" | "google" | "email"));
+        }
+      } catch (e) {
+        console.log("[onboarding] detect auth provider error", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const fade = useRef(new Animated.Value(1)).current;
   const slide = useRef(new Animated.Value(0)).current;
 
@@ -389,7 +409,7 @@ export default function Onboarding() {
   const showProgress = PROGRESS_VISIBLE.includes(step);
   const progressFilled = PROGRESS_INDEX[step] ?? -1;
 
-  const displayName = name.trim() || state.userName || "you";
+  const displayName = name.trim() || state.userName || "Athlete";
 
   return (
     <View style={styles.root} testID="onboarding-root">
@@ -444,7 +464,13 @@ export default function Onboarding() {
           )}
           {step === "solution" && (
             <SolutionScreen
-              onNext={() => go(authProvider === "apple" ? "attempts" : "name")}
+              onNext={() =>
+                go(
+                  authProvider === "apple" || (state.userName?.trim().length ?? 0) > 0
+                    ? "attempts"
+                    : "name",
+                )
+              }
               onBack={goBack}
             />
           )}

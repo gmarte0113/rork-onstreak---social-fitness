@@ -183,7 +183,7 @@ export default function HomeScreen() {
           <View>
             <Text style={styles.greeting}>{greeting}</Text>
             <Text style={styles.appName}>
-              {state.userName ? state.userName : "OnStreak"}
+              {state.userName ? state.userName : "Athlete"}
             </Text>
           </View>
           <TouchableOpacity

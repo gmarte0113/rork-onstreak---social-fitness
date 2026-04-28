@@ -96,7 +96,7 @@ export default function SocialScreen() {
     const without = remote.filter((u) => u.id !== state.userId);
     const self = {
       id: state.userId,
-      name: state.userName || "You",
+      name: state.userName || "Athlete",
       streak: state.streak,
       total: state.completedDates.length,
     };

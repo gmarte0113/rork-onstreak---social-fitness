@@ -1216,7 +1216,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const createGroup = useCallback(
     async (name: string): Promise<Group | null> => {
-      const userName = stateRef.current.userName || "You";
+      const userName = stateRef.current.userName || "Athlete";
       const localCode = code();
       console.log("[AppProvider] createGroup: verifying auth before insert");
       let authedUserId: string | null = null;
@@ -1344,7 +1344,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         return { ok: true, group: existingLocal };
       }
       const userId = stateRef.current.userId;
-      const userName = stateRef.current.userName || "You";
+      const userName = stateRef.current.userName || "Athlete";
       const remote = await joinGroupRemote({
         userId,
         userName,
@@ -1513,14 +1513,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
       const today = toDateKey(new Date());
       const groupsSnapshot = stateRef.current.groups;
       const selfId = stateRef.current.userId;
-      const selfName = stateRef.current.userName || "You";
+      const selfName = stateRef.current.userName || "Athlete";
 
       persist((prev) => {
         if (prev.groups.length === 0) return prev;
         const newPhotos: WorkoutPhoto[] = prev.groups.map((g) => ({
           id: uid(),
           userId: prev.userId,
-          userName: prev.userName || "You",
+          userName: prev.userName || "Athlete",
           groupId: g.id,
           date: today,
           uri,
