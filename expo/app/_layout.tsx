@@ -11,11 +11,23 @@ import { AppProvider } from "@/providers/AppProvider";
 import { Colors } from "@/constants/colors";
 import { MedalModal } from "@/components/MedalModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { PostHogProvider } from "posthog-react-native";
+import { PostHogProvider, usePostHog } from "posthog-react-native";
+import { setAnalyticsClient } from "@/utils/analytics";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+function AnalyticsBootstrapper() {
+  const posthog = usePostHog();
+  useEffect(() => {
+    setAnalyticsClient(posthog ?? null);
+    return () => {
+      setAnalyticsClient(null);
+    };
+  }, [posthog]);
+  return null;
+}
 
 function RootLayoutNav() {
   return (
@@ -70,6 +82,7 @@ export default function RootLayout() {
               autocapture={{ captureTouches: true, captureLifecycleEvents: true, captureScreens: true }}
             >
               <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg }}>
+                <AnalyticsBootstrapper />
                 <StatusBar style="light" />
                 <RootLayoutNav />
                 <MedalModal />

@@ -16,6 +16,7 @@ import { Colors } from "@/constants/colors";
 import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
 import { getExerciseDescription } from "@/constants/workouts";
 import AnimatedCheckmark from "@/components/AnimatedCheckmark";
+import { track } from "@/utils/analytics";
 
 const REP_TIMER_SECONDS = 30;
 
@@ -32,6 +33,16 @@ export default function WorkoutScreen() {
   const [phase, setPhase] = useState<"ready" | "done">(
     completedToday ? "done" : "ready"
   );
+
+  useEffect(() => {
+    if (!completedToday) {
+      track("workout_started", {
+        plan: "daily",
+        day: null,
+        title: todayWorkout.title,
+      });
+    }
+  }, [completedToday, todayWorkout.title]);
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const scale = useRef(new Animated.Value(1)).current;
   const fade = useRef(new Animated.Value(0)).current;

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,7 @@ import {
   restorePurchases,
 } from "@/lib/purchases";
 import { PRIVACY_URL, TERMS_URL } from "@/constants/legal";
+import { track } from "@/utils/analytics";
 
 type PlanId = "monthly" | "yearly";
 
@@ -46,6 +47,10 @@ function formatPrice(pkg: PurchasesPackage | undefined): string {
 export default function PaywallScreen() {
   const { setPremium } = useApp();
   const [selected, setSelected] = useState<PlanId>("yearly");
+
+  useEffect(() => {
+    track("paywall_viewed", { source: "paywall_modal" });
+  }, []);
 
   const offeringQuery = useQuery({
     queryKey: ["rc-offering"],
@@ -72,13 +77,20 @@ export default function PaywallScreen() {
 
   const purchaseMutation = useMutation({
     mutationFn: async (pkg: PurchasesPackage) => purchasePackage(pkg),
-    onSuccess: (res) => {
+    onSuccess: (res, pkg) => {
       if (res.userCancelled) return;
       if (!res.ok) {
         Alert.alert("Purchase failed", res.error ?? "Please try again.");
         return;
       }
       setPremium(res.isPro);
+      if (res.isPro) {
+        track("subscription_started", {
+          plan: pkg.identifier === "$rc_annual" ? "annual" : "monthly",
+          product_id: pkg.product.identifier,
+          source: "paywall_modal",
+        });
+      }
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
@@ -206,7 +218,10 @@ export default function PaywallScreen() {
             styles.planCard,
             selected === "yearly" && styles.planCardActive,
           ]}
-          onPress={() => setSelected("yearly")}
+          onPress={() => {
+            setSelected("yearly");
+            track("plan_selected", { plan: "yearly", source: "paywall_modal" });
+          }}
           activeOpacity={0.9}
           testID="plan-yearly"
         >
@@ -237,7 +252,10 @@ export default function PaywallScreen() {
             styles.planCard,
             selected === "monthly" && styles.planCardActive,
           ]}
-          onPress={() => setSelected("monthly")}
+          onPress={() => {
+            setSelected("monthly");
+            track("plan_selected", { plan: "monthly", source: "paywall_modal" });
+          }}
           activeOpacity={0.9}
           testID="plan-monthly"
         >

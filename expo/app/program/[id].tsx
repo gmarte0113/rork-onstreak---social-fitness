@@ -25,6 +25,7 @@ import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
 import { getProgram } from "@/constants/programs";
 import { maybeRequestFirstWorkoutReview } from "@/lib/review";
 import WorkoutTimer from "@/components/WorkoutTimer";
+import { track } from "@/utils/analytics";
 
 export default function ProgramScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -118,6 +119,16 @@ export default function ProgramScreen() {
   useEffect(() => {
     if (todayDone) setTimerDone(true);
   }, [todayDone]);
+
+  useEffect(() => {
+    if (program && isActive && !todayDone && !todayLocked) {
+      track("workout_started", {
+        plan: "program",
+        program_id: program.id,
+        day: currentDay,
+      });
+    }
+  }, [program, isActive, todayDone, todayLocked, currentDay]);
 
   const onComplete = async () => {
     if (todayLocked || todayDone || !todayEntry) return;

@@ -30,6 +30,7 @@ import {
   PLAN_DURATION_DAYS,
 } from "@/constants/personalizedPlan";
 import WorkoutTimer from "@/components/WorkoutTimer";
+import { track } from "@/utils/analytics";
 
 export default function PlanScreen() {
   const {
@@ -65,6 +66,12 @@ export default function PlanScreen() {
   useEffect(() => {
     if (todayDone) setTimerDone(true);
   }, [todayDone]);
+
+  useEffect(() => {
+    if (plan && !todayDone) {
+      track("workout_started", { plan: "personalized", day: currentDay });
+    }
+  }, [plan, todayDone, currentDay]);
 
   useEffect(() => {
     if (!plan) {

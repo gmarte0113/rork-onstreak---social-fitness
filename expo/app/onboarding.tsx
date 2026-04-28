@@ -75,6 +75,7 @@ import {
 } from "@/lib/purchases";
 import { PRIVACY_URL, TERMS_URL } from "@/constants/legal";
 import { supabase } from "@/lib/supabase";
+import { track } from "@/utils/analytics";
 
 type Step =
   | "welcome"
@@ -220,6 +221,13 @@ export default function Onboarding() {
       const chosen = pkg.identifier === "$rc_annual" ? "annual" : "monthly";
       saveOnboardingAnswers({ planSelected: chosen });
       setPremium(res.isPro);
+      if (res.isPro) {
+        track("subscription_started", {
+          plan: chosen,
+          product_id: pkg.product.identifier,
+          source: "onboarding",
+        });
+      }
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
@@ -320,6 +328,12 @@ export default function Onboarding() {
   };
 
   const finishOnboarding = () => {
+    track("onboarding_completed", {
+      goal,
+      level,
+      plan_selected: state.planSelected,
+      auth_provider: authProvider,
+    });
     if (goal && level) {
       saveOnboardingAnswers({
         name: name.trim(),
@@ -614,11 +628,17 @@ export default function Onboarding() {
             />
           )}
           {step === "paywall" && (
+            <OnboardingPaywallTracker plan={plan} />
+          )}
+          {step === "paywall" && (
             <PaywallScreen
               name={displayName}
               attempts={attempts}
               plan={plan}
-              setPlan={setPlan}
+              setPlan={(p) => {
+                setPlan(p);
+                track("plan_selected", { plan: p, source: "onboarding" });
+              }}
               annualPkg={annualPkg}
               monthlyPkg={monthlyPkg}
               loadingPrices={offeringQuery.isLoading}
@@ -1697,6 +1717,13 @@ function AmPmToggle({
       </Pressable>
     </View>
   );
+}
+
+function OnboardingPaywallTracker({ plan }: { plan: "annual" | "monthly" }) {
+  useEffect(() => {
+    track("paywall_viewed", { source: "onboarding", default_plan: plan });
+  }, []);
+  return null;
 }
 
 function PaywallScreen({

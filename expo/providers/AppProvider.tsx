@@ -57,6 +57,7 @@ import {
   fetchGroupPhotosRemote,
 } from "@/lib/groups";
 import { MAX_GROUP_MEMBERS } from "@/constants/groupIcons";
+import { identifyUser, track } from "@/utils/analytics";
 
 const STORAGE_KEY = "@lazyfit/state/v2";
 
@@ -311,7 +312,16 @@ export const [AppProvider, useApp] = createContextHook(() => {
       if (!isSupabaseConfigured) return;
       try {
         const { userId: existing } = await safeGetSession();
-        if (existing) applyUid(existing);
+        if (existing) {
+          applyUid(existing);
+          try {
+            const { data } = await supabase.auth.getUser();
+            const email = data?.user?.email ?? undefined;
+            identifyUser(existing, email ? { email } : undefined);
+          } catch (e) {
+            console.log("[AppProvider] identify on resume error", e);
+          }
+        }
       } catch (e) {
         console.log("[AppProvider] get existing session error", e);
       }
@@ -321,6 +331,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
       const uid = session?.user?.id ?? null;
       if (uid) {
         applyUid(uid);
+        const email = session?.user?.email ?? undefined;
+        identifyUser(uid, email ? { email } : undefined);
       } else if (event === "SIGNED_OUT") {
         setSupabaseUserId(null);
       }
@@ -606,6 +618,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
           totalMinutes: prev.totalMinutes + (stats?.minutes ?? 0),
         };
         out = checkStreakMedals(out, nextStreak);
+        track("workout_completed", {
+          plan: "daily",
+          day: null,
+          streak_count: nextStreak,
+        });
+        if (nextStreak !== prev.streak) {
+          track("streak_updated", { streak_count: nextStreak });
+        }
         return out;
       });
     },
@@ -1221,6 +1241,15 @@ export const [AppProvider, useApp] = createContextHook(() => {
           longestStreak: Math.max(out.longestStreak, globalStreak),
         };
         out = checkStreakMedals(out, globalStreak);
+        track("workout_completed", {
+          plan: "program",
+          program_id: programId,
+          day,
+          streak_count: globalStreak,
+        });
+        if (globalStreak !== prev.streak) {
+          track("streak_updated", { streak_count: globalStreak });
+        }
 
         const program = getProgram(programId);
         if (program && newCompleted.length >= program.durationDays) {
@@ -1283,6 +1312,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
           throw new Error("INSERT_FAILED");
         }
         persist((prev) => ({ ...prev, groups: [...prev.groups, remote] }));
+        track("group_created", { group_id: remote.id, name });
         return remote;
       }
       const g: Group = {
@@ -1308,6 +1338,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         ],
       };
       persist((prev) => ({ ...prev, groups: [...prev.groups, g] }));
+      track("group_created", { group_id: g.id, name });
       return g;
     },
     [persist]
@@ -1390,6 +1421,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
           }
           return { ...prev, groups: [...prev.groups, remote.group] };
         });
+        track("group_joined", { group_id: remote.group.id });
         refreshGroups().catch((e) => console.log("[AppProvider] post-join refresh error", e));
         console.log("[AppProvider] joinGroup success, groups now", stateRef.current.groups.length);
         return { ok: true, group: remote.group };
@@ -1513,6 +1545,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
           { fromId: prev.userId, toId, groupId, at: Date.now(), date: today },
         ],
       }));
+      track("nudge_sent", { group_id: groupId, to_id: toId });
       (async () => {
         try {
           console.log("[nudge] sending push to", toId, "from", senderName);
@@ -1545,6 +1578,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
       persist((prev) => {
         if (prev.groups.length === 0) return prev;
+        track("photo_uploaded", {
+          group_count: prev.groups.length,
+          date: today,
+        });
         const newPhotos: WorkoutPhoto[] = prev.groups.map((g) => ({
           id: uid(),
           userId: prev.userId,
@@ -1859,6 +1896,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
           longestStreak: Math.max(prev.longestStreak, globalStreak),
         };
         out = checkStreakMedals(out, globalStreak);
+        track("workout_completed", {
+          plan: "personalized",
+          day,
+          streak_count: globalStreak,
+        });
+        if (globalStreak !== prev.streak) {
+          track("streak_updated", { streak_count: globalStreak });
+        }
         if (newCompleted.length >= PLAN_DURATION_DAYS) {
           out = awardMedalIfNew(out, PERSONAL_PLAN_MEDAL_ID);
         }
