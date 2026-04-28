@@ -158,6 +158,7 @@ export default function Onboarding() {
     setNotificationsEnabled,
     setReminderTime,
     setPremium,
+    setUserName,
   } = useApp();
 
   useEffect(() => {
@@ -348,7 +349,8 @@ export default function Onboarding() {
     setAuthProvider("apple");
     const appleFirstName = res.firstName?.trim();
     if (appleFirstName) {
-      console.log("[onboarding] apple firstName received", appleFirstName);
+      console.log("[onboarding] apple firstName received, applying immediately", appleFirstName);
+      setUserName(appleFirstName);
       setName(appleFirstName);
       saveOnboardingAnswers({ name: appleFirstName });
     }
