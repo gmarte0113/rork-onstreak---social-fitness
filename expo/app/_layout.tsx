@@ -10,6 +10,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "@/providers/AppProvider";
 import { Colors } from "@/constants/colors";
 import { MedalModal } from "@/components/MedalModal";
+import { HeaderBackButton } from "@/components/HeaderBackButton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PostHogProvider, usePostHog } from "posthog-react-native";
 import { setAnalyticsClient } from "@/utils/analytics";
@@ -34,9 +35,11 @@ function RootLayoutNav() {
     <Stack
       screenOptions={{
         headerBackTitle: "Back",
+        headerBackTitleVisible: false,
         headerStyle: { backgroundColor: Colors.bg },
         headerTitleStyle: { color: Colors.text, fontWeight: "700" },
         headerTintColor: Colors.text,
+        headerLeft: ({ canGoBack }) => (canGoBack ? <HeaderBackButton /> : null),
         contentStyle: { backgroundColor: Colors.bg },
         animation: "fade",
         animationDuration: 280,
