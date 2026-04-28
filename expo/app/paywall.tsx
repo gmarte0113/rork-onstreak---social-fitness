@@ -269,18 +269,16 @@ export default function PaywallScreen() {
             {purchasing || loading ? (
               <ActivityIndicator color={Colors.text} />
             ) : (
-              <Text style={styles.ctaText}>Start My Streak</Text>
+              <Text style={styles.ctaText}>Start Free Trial</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
 
-        <Text style={styles.ctaSubtext}>Most users lose their streak after 7 days</Text>
+        <Text style={styles.ctaSubtext}>Most users lose their streak in the first week. Stay consistent with Pro.</Text>
 
-        {pricesReady && (
-          <Text style={styles.renewalDisclosure}>
-            7-day free trial, then {selectedLabel}. Auto-renews until canceled. Cancel anytime in your App Store account settings.
-          </Text>
-        )}
+        <Text style={styles.renewalDisclosure}>
+          {pricesReady ? `7-day free trial, then ${selectedLabel}. ` : ""}Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. You can manage or cancel your subscription in your App Store account settings.
+        </Text>
 
         {isPurchasesSupported && (
           <TouchableOpacity

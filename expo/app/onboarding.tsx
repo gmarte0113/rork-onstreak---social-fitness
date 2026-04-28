@@ -73,6 +73,7 @@ import {
   purchasePackage,
   restorePurchases,
 } from "@/lib/purchases";
+import { PRIVACY_URL, TERMS_URL } from "@/constants/legal";
 
 type Step =
   | "welcome"
@@ -1691,6 +1692,22 @@ function PaywallScreen({
   const tries = attemptsToCount(attempts);
   const annualLabel = annualPkg?.product.priceString ?? (loadingPrices ? "Loading\u2026" : "\u2014");
   const monthlyLabel = monthlyPkg?.product.priceString ?? (loadingPrices ? "Loading\u2026" : "\u2014");
+  const annualMonthlyEquivalent: string | null = (() => {
+    if (!annualPkg) return null;
+    const price = annualPkg.product.price;
+    const code = annualPkg.product.currencyCode ?? "USD";
+    if (typeof price !== "number" || price <= 0) return null;
+    const monthly = price / 12;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: code,
+        maximumFractionDigits: 2,
+      }).format(monthly);
+    } catch (_e) {
+      return `${monthly.toFixed(2)} ${code}`;
+    }
+  })();
   const handlePick = (p: "annual" | "monthly") => {
     if (purchasing) return;
     setPlan(p);
@@ -1758,7 +1775,10 @@ function PaywallScreen({
                 <Text style={styles.saveBadgeText}>BEST VALUE</Text>
               </View>
               <Text style={styles.planTitle}>Annual</Text>
-              <Text style={styles.planPrice}>{annualLabel}{annualPkg ? " / yr" : ""}</Text>
+              <Text style={styles.planPrice}>{annualLabel}{annualPkg ? " / year" : ""}</Text>
+              {annualMonthlyEquivalent ? (
+                <Text style={styles.planEquivSelected}>{annualMonthlyEquivalent}/month billed annually</Text>
+              ) : null}
             </LinearGradient>
           ) : (
             <View style={[styles.planAnnualInner, styles.planUnselected]}>
@@ -1766,7 +1786,10 @@ function PaywallScreen({
                 <Text style={styles.saveBadgeText}>BEST VALUE</Text>
               </View>
               <Text style={styles.planTitle}>Annual</Text>
-              <Text style={styles.planPriceMuted}>{annualLabel}{annualPkg ? " / yr" : ""}</Text>
+              <Text style={styles.planPriceMuted}>{annualLabel}{annualPkg ? " / year" : ""}</Text>
+              {annualMonthlyEquivalent ? (
+                <Text style={styles.planEquivMuted}>{annualMonthlyEquivalent}/month billed annually</Text>
+              ) : null}
             </View>
           )}
         </Pressable>
@@ -1777,7 +1800,7 @@ function PaywallScreen({
           disabled={purchasing}
         >
           <Text style={styles.planTitle}>Monthly</Text>
-          <Text style={styles.planPriceMuted}>{monthlyLabel}{monthlyPkg ? " / mo" : ""}</Text>
+          <Text style={styles.planPriceMuted}>{monthlyLabel}{monthlyPkg ? " / month" : ""}</Text>
         </Pressable>
       </View>
       <Text style={styles.tinyNote}>7-day free trial · Cancel anytime in Settings</Text>
@@ -1800,10 +1823,24 @@ function PaywallScreen({
           testID="paywall-restore"
         >
           <Text style={[styles.maybeLaterText, { textDecorationLine: "underline", fontSize: 13 }]}>
-            {restoring ? "Restoring\u2026" : "Restore purchases"}
+            {restoring ? "Restoring\u2026" : "Restore Purchases"}
           </Text>
         </TouchableOpacity>
       ) : null}
+
+      <Text style={styles.paywallDisclosure}>
+        Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. You can manage or cancel your subscription in your App Store account settings.
+      </Text>
+
+      <View style={styles.paywallLegalRow}>
+        <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL).catch(() => {})} testID="onboarding-paywall-terms">
+          <Text style={styles.paywallLegalLink}>Terms of Use</Text>
+        </TouchableOpacity>
+        <Text style={styles.paywallLegalDot}>·</Text>
+        <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} testID="onboarding-paywall-privacy">
+          <Text style={styles.paywallLegalLink}>Privacy Policy</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -2831,6 +2868,31 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   maybeLaterText: { color: Colors.text, fontSize: 14, fontWeight: "700" },
+  planEquivSelected: { color: "#FFE9DC", fontSize: 11, fontWeight: "700", marginTop: 4 },
+  planEquivMuted: { color: Colors.textDim, fontSize: 11, fontWeight: "700", marginTop: 4 },
+  paywallDisclosure: {
+    color: Colors.textDim,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: "center",
+    marginTop: 14,
+    paddingHorizontal: 4,
+  },
+  paywallLegalRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  paywallLegalLink: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textDecorationLine: "underline",
+  },
+  paywallLegalDot: { color: Colors.textDim, fontSize: 12 },
 
   applePayBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" },
   applePaySheet: {
