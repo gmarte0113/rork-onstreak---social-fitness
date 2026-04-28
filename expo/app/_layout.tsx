@@ -11,6 +11,7 @@ import { AppProvider } from "@/providers/AppProvider";
 import { Colors } from "@/constants/colors";
 import { MedalModal } from "@/components/MedalModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PostHogProvider } from "posthog-react-native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,11 +64,17 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <AppProvider>
-            <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg }}>
-              <StatusBar style="light" />
-              <RootLayoutNav />
-              <MedalModal />
-            </GestureHandlerRootView>
+            <PostHogProvider
+              apiKey="phc_wMXaBaoaDp9WSVMZ2GBgj8GNc7j8Xxg34Cs54EZZX6DS"
+              options={{ host: "https://us.i.posthog.com", enableSessionReplay: false }}
+              autocapture={{ captureTouches: true, captureLifecycleEvents: true, captureScreens: true }}
+            >
+              <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg }}>
+                <StatusBar style="light" />
+                <RootLayoutNav />
+                <MedalModal />
+              </GestureHandlerRootView>
+            </PostHogProvider>
           </AppProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
