@@ -3,7 +3,13 @@ import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 import { supabase } from "./supabase";
 
-export type AuthResult = { ok: boolean; error?: string; needsEmailConfirmation?: boolean };
+export type AuthResult = {
+  ok: boolean;
+  error?: string;
+  needsEmailConfirmation?: boolean;
+  provider?: "apple" | "google" | "email";
+  firstName?: string;
+};
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -49,16 +55,17 @@ export async function signUpWithEmail(
     });
     if (error) {
       console.log("[auth] signUp error", error.message);
-      return { ok: false, error: friendlyAuthError(error.message) };
+      return { ok: false, error: friendlyAuthError(error.message), provider: "email" };
     }
     if (!data.session) {
       return {
         ok: false,
         needsEmailConfirmation: true,
+        provider: "email",
         error: "Please check your email to confirm your account, then log in.",
       };
     }
-    return { ok: true };
+    return { ok: true, provider: "email" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.log("[auth] signUp exception", msg);
@@ -80,9 +87,9 @@ export async function signInWithEmail(
     console.log("[auth][signInWithEmail] done", { hasSession: Boolean(data?.session), hasUser: Boolean(data?.user), error: error?.message, status: (error as { status?: number } | null)?.status });
     if (error) {
       console.log("[auth] signIn error full", JSON.stringify(error));
-      return { ok: false, error: friendlyAuthError(error.message) };
+      return { ok: false, error: friendlyAuthError(error.message), provider: "email" };
     }
-    return { ok: true };
+    return { ok: true, provider: "email" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.log("[auth][signInWithEmail] caught", msg, e);
@@ -160,7 +167,7 @@ async function signInWithAppleOAuth(): Promise<AuthResult> {
       refresh_token,
     });
     if (sErr) return { ok: false, error: friendlyAuthError(sErr.message) };
-    return { ok: true };
+    return { ok: true, provider: "apple" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.log("[auth] apple oauth exception", msg);
@@ -186,9 +193,11 @@ export async function signInWithApple(): Promise<AuthResult> {
       ],
     });
     if (!credential.identityToken) {
-      return { ok: false, error: "No identity token from Apple" };
+      return { ok: false, error: "No identity token from Apple", provider: "apple" };
     }
-    console.log("[auth][apple] got identity token, calling signInWithIdToken");
+    const givenName = credential.fullName?.givenName?.trim() ?? "";
+    const firstName = givenName.length > 0 ? givenName.split(/\s+/)[0] : undefined;
+    console.log("[auth][apple] got identity token, firstName=", firstName);
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: "apple",
       token: credential.identityToken,
@@ -196,9 +205,30 @@ export async function signInWithApple(): Promise<AuthResult> {
     console.log("[auth][apple] signInWithIdToken done", { hasSession: Boolean(data?.session), error: error?.message, status: (error as { status?: number } | null)?.status });
     if (error) {
       console.log("[auth][apple] error full", JSON.stringify(error));
-      return { ok: false, error: friendlyAuthError(error.message) };
+      return { ok: false, error: friendlyAuthError(error.message), provider: "apple" };
     }
-    return { ok: true };
+    if (firstName && data?.user?.id) {
+      try {
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        const currentName = (existing as { name: string | null } | null)?.name?.trim() ?? "";
+        if (!currentName) {
+          const { error: upErr } = await supabase
+            .from("profiles")
+            .upsert(
+              { user_id: data.user.id, name: firstName, updated_at: new Date().toISOString() },
+              { onConflict: "user_id" },
+            );
+          if (upErr) console.log("[auth][apple] profile name upsert error", upErr.message);
+        }
+      } catch (e) {
+        console.log("[auth][apple] persist firstName exception", e);
+      }
+    }
+    return { ok: true, provider: "apple", firstName };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const lower = msg.toLowerCase();

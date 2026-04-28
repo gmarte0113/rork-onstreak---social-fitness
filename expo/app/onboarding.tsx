@@ -250,6 +250,7 @@ export default function Onboarding() {
   const [authEmail, setAuthEmail] = useState<string>("");
   const [authPassword, setAuthPassword] = useState<string>("");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authProvider, setAuthProvider] = useState<"apple" | "google" | "email" | null>(null);
 
   const fade = useRef(new Animated.Value(1)).current;
   const slide = useRef(new Animated.Value(0)).current;
@@ -323,6 +324,13 @@ export default function Onboarding() {
     if (!res.ok) {
       setAuthError(res.error ?? "Apple sign in failed");
       return;
+    }
+    setAuthProvider("apple");
+    const appleFirstName = res.firstName?.trim();
+    if (appleFirstName) {
+      console.log("[onboarding] apple firstName received", appleFirstName);
+      setName(appleFirstName);
+      saveOnboardingAnswers({ name: appleFirstName });
     }
     if (step === "signup") {
       animateTo("problem");
@@ -435,7 +443,10 @@ export default function Onboarding() {
             <ProblemScreen onNext={() => go("solution")} onBack={goBack} />
           )}
           {step === "solution" && (
-            <SolutionScreen onNext={() => go("name")} onBack={goBack} />
+            <SolutionScreen
+              onNext={() => go(authProvider === "apple" ? "attempts" : "name")}
+              onBack={goBack}
+            />
           )}
           {step === "name" && (
             <NameScreen
