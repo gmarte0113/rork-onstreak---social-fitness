@@ -27,6 +27,7 @@ import {
   ArrowRight,
   LineChart,
   Plus,
+  ChevronsRight,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
@@ -41,10 +42,15 @@ function endOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
 
+type PhotoSlot =
+  | { kind: "before" }
+  | { kind: "after" }
+  | { kind: "extra"; index: number };
+
 export default function ProgressScreen() {
-  const { state, setPhoto, deletePhoto } = useApp();
+  const { state, setPhoto, deletePhoto, addExtraPhoto, deleteExtraPhoto } = useApp();
   const [cursor, setCursor] = useState<Date>(startOfMonth(new Date()));
-  const [viewing, setViewing] = useState<{ slot: "before" | "after"; uri: string; date?: string } | null>(null);
+  const [viewing, setViewing] = useState<{ slot: PhotoSlot; uri: string; date?: string } | null>(null);
 
   const days = useMemo(() => {
     const first = startOfMonth(cursor);
@@ -74,7 +80,7 @@ export default function ProgressScreen() {
   const todayDayNum = today.getDate();
   const todayMonthShort = today.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
 
-  const pickImage = async (which: "before" | "after") => {
+  const pickAndAddPhoto = async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
@@ -88,7 +94,14 @@ export default function ProgressScreen() {
         quality: 0.7,
       });
       if (!result.canceled && result.assets[0]) {
-        setPhoto(which, result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        if (!state.beforePhoto?.uri) {
+          setPhoto("before", uri);
+        } else if (!state.afterPhoto?.uri) {
+          setPhoto("after", uri);
+        } else {
+          addExtraPhoto(uri);
+        }
       }
     } catch (e) {
       console.log("pickImage error", e);
@@ -96,21 +109,18 @@ export default function ProgressScreen() {
   };
 
   const filledPhotos = useMemo(() => {
-    const arr: { slot: "before" | "after"; uri: string; date?: string }[] = [];
+    const arr: { slot: PhotoSlot; uri: string; date?: string }[] = [];
     if (state.beforePhoto?.uri) {
-      arr.push({ slot: "before", uri: state.beforePhoto.uri, date: state.beforePhoto.date });
+      arr.push({ slot: { kind: "before" }, uri: state.beforePhoto.uri, date: state.beforePhoto.date });
     }
     if (state.afterPhoto?.uri) {
-      arr.push({ slot: "after", uri: state.afterPhoto.uri, date: state.afterPhoto.date });
+      arr.push({ slot: { kind: "after" }, uri: state.afterPhoto.uri, date: state.afterPhoto.date });
     }
+    (state.extraPhotos ?? []).forEach((p, i) => {
+      arr.push({ slot: { kind: "extra", index: i }, uri: p.uri, date: p.date });
+    });
     return arr;
-  }, [state.beforePhoto, state.afterPhoto]);
-
-  const nextEmptySlot: "before" | "after" | null = useMemo(() => {
-    if (!state.beforePhoto?.uri) return "before";
-    if (!state.afterPhoto?.uri) return "after";
-    return null;
-  }, [state.beforePhoto, state.afterPhoto]);
+  }, [state.beforePhoto, state.afterPhoto, state.extraPhotos]);
 
   const unit = state.weightUnit;
   const toDisplay = (kg: number): number => {
@@ -410,8 +420,7 @@ export default function ProgressScreen() {
               ...p,
               weight: weightForDate(state.weights, p.date, toDisplay, unit),
             }))}
-            canAdd={!!nextEmptySlot}
-            onAdd={() => nextEmptySlot && pickImage(nextEmptySlot)}
+            onAdd={pickAndAddPhoto}
             onOpen={(p) => setViewing({ slot: p.slot, uri: p.uri, date: p.date })}
           />
         </View>
@@ -442,7 +451,11 @@ export default function ProgressScreen() {
                   onPress={() => {
                     const slot = viewing.slot;
                     const doDelete = () => {
-                      deletePhoto(slot);
+                      if (slot.kind === "extra") {
+                        deleteExtraPhoto(slot.index);
+                      } else {
+                        deletePhoto(slot.kind);
+                      }
                       setViewing(null);
                     };
                     if (Platform.OS === "web") {
@@ -539,7 +552,7 @@ function formatPhotoDate(date?: string): string {
 }
 
 type TimelinePhoto = {
-  slot: "before" | "after";
+  slot: PhotoSlot;
   uri: string;
   date?: string;
   weight?: string;
@@ -552,16 +565,28 @@ const SNAP_INTERVAL = CARD_W + CARD_GAP;
 
 function PhotoTimeline({
   photos,
-  canAdd,
   onAdd,
   onOpen,
 }: {
   photos: TimelinePhoto[];
-  canAdd: boolean;
   onAdd: () => void;
   onOpen: (p: TimelinePhoto) => void;
 }) {
   const scrollX = useRef(new Animated.Value(0)).current;
+  const hintAnim = useRef(new Animated.Value(0)).current;
+  const [hasScrolled, setHasScrolled] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (photos.length < 2 || hasScrolled) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(hintAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(hintAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [photos.length, hasScrolled, hintAnim]);
 
   if (photos.length === 0) {
     return (
@@ -580,12 +605,14 @@ function PhotoTimeline({
     );
   }
 
-  const items: (TimelinePhoto | { add: true })[] = [...photos];
-  if (canAdd) items.push({ add: true });
+  const items: (TimelinePhoto | { add: true })[] = [...photos, { add: true }];
 
   const sidePadding = (SCREEN_W - CARD_W) / 2 - 36;
+  const showHint = photos.length >= 2 && !hasScrolled;
+  const hintTranslate = hintAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
 
   return (
+    <View>
     <Animated.ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -599,7 +626,13 @@ function PhotoTimeline({
       }}
       onScroll={Animated.event(
         [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-        { useNativeDriver: true },
+        {
+          useNativeDriver: true,
+          listener: (e) => {
+            const x = (e.nativeEvent as { contentOffset: { x: number } }).contentOffset.x;
+            if (x > 12 && !hasScrolled) setHasScrolled(true);
+          },
+        },
       )}
       scrollEventThrottle={16}
       testID="photo-timeline"
@@ -643,17 +676,19 @@ function PhotoTimeline({
           );
         }
 
-        const isLatest = i === photos.length - 1;
+        const isLatest = i === photos.length - 1 && photos.length > 0;
+        const slotKey =
+          item.slot.kind === "extra" ? `extra-${item.slot.index}` : item.slot.kind;
         return (
           <Animated.View
-            key={item.slot}
+            key={slotKey}
             style={[styles.timelineCardWrap, { transform: [{ scale }], opacity }]}
           >
             <TouchableOpacity
               activeOpacity={0.9}
               style={[styles.timelineCard, isLatest && styles.timelineCardLatest]}
               onPress={() => onOpen(item)}
-              testID={`photo-${item.date ?? item.slot}`}
+              testID={`photo-${item.date ?? slotKey}`}
             >
               <Image source={{ uri: item.uri }} style={styles.timelineImg} />
               <LinearGradient
@@ -678,6 +713,16 @@ function PhotoTimeline({
         );
       })}
     </Animated.ScrollView>
+      {showHint && (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.swipeHint, { transform: [{ translateX: hintTranslate }] }]}
+        >
+          <Text style={styles.swipeHintText}>Swipe</Text>
+          <ChevronsRight color={Colors.primary} size={14} />
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
@@ -1284,6 +1329,26 @@ const styles = StyleSheet.create({
   emptyTimelineSub: {
     color: Colors.textMuted,
     fontSize: 13,
+  },
+  swipeHint: {
+    alignSelf: "center",
+    marginTop: 4,
+    marginBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,107,53,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,107,53,0.30)",
+  },
+  swipeHintText: {
+    color: Colors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.2,
   },
 
   modalBackdrop: {

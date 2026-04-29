@@ -169,6 +169,7 @@ export type AppState = {
   weights: WeightEntry[];
   beforePhoto: PhotoEntry | null;
   afterPhoto: PhotoEntry | null;
+  extraPhotos: PhotoEntry[];
   isPremium: boolean;
   programs: Record<string, ProgramProgress>;
   totalReps: number;
@@ -215,6 +216,7 @@ const DEFAULT_STATE: AppState = {
   weights: [],
   beforePhoto: null,
   afterPhoto: null,
+  extraPhotos: [],
   isPremium: false,
   programs: {},
   totalReps: 0,
@@ -838,6 +840,27 @@ export const [AppProvider, useApp] = createContextHook(() => {
       })();
     },
     [persist, hydrateFromSupabase]
+  );
+
+  const addExtraPhoto = useCallback(
+    (uri: string) => {
+      const dateKey = toDateKey(new Date());
+      persist((prev) => ({
+        ...prev,
+        extraPhotos: [...(prev.extraPhotos ?? []), { date: dateKey, uri }],
+      }));
+    },
+    [persist]
+  );
+
+  const deleteExtraPhoto = useCallback(
+    (index: number) => {
+      persist((prev) => ({
+        ...prev,
+        extraPhotos: (prev.extraPhotos ?? []).filter((_, i) => i !== index),
+      }));
+    },
+    [persist]
   );
 
   const deletePhoto = useCallback(
@@ -1945,6 +1968,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
       logWeight,
       setPhoto,
       deletePhoto,
+      addExtraPhoto,
+      deleteExtraPhoto,
       setReminderHour,
       setReminderTime,
       setNotificationsEnabled,
@@ -1999,6 +2024,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
       logWeight,
       setPhoto,
       deletePhoto,
+      addExtraPhoto,
+      deleteExtraPhoto,
       setReminderHour,
       setReminderTime,
       setNotificationsEnabled,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Platform } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
@@ -16,32 +16,34 @@ export function HeaderBackButton({ canGoBack }: { canGoBack?: boolean }) {
   return (
     <Pressable
       onPress={handlePress}
-      hitSlop={10}
+      hitSlop={12}
       testID="header-back-button"
       style={({ pressed }) => [
-        styles.button,
+        styles.wrap,
         pressed && styles.pressed,
       ]}
     >
-      <ArrowLeft color="#FFFFFF" size={20} strokeWidth={2.75} />
+      <View style={styles.circle}>
+        <ArrowLeft color="#FFFFFF" size={18} strokeWidth={3} />
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  wrap: {
+    paddingLeft: 4,
+    paddingRight: 8,
+    paddingVertical: 4,
+  },
+  circle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: Platform.OS === "ios" ? -4 : 0,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingRight: 1,
   },
   pressed: {
     opacity: 0.85,
