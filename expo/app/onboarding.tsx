@@ -368,6 +368,10 @@ export default function Onboarding() {
       setName(appleFirstName);
       saveOnboardingAnswers({ name: appleFirstName });
     }
+    if (step === "login") {
+      const completed = await finalizeLoginIfProfileComplete();
+      if (completed) return;
+    }
     if (step === "signup") {
       animateTo("problem");
       return;
@@ -405,6 +409,45 @@ export default function Onboarding() {
     animateTo("problem");
   };
 
+  const finalizeLoginIfProfileComplete = async (): Promise<boolean> => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData?.user?.id;
+      if (!uid) {
+        setAuthError("Login failed. Please try again.");
+        return false;
+      }
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("name, goal, level")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (profileErr) {
+        console.log("[onboarding] login profile fetch error", profileErr.message);
+      }
+      const profileName = (profile as { name: string | null } | null)?.name?.trim() ?? "";
+      const profileGoal = ((profile as { goal: string | null } | null)?.goal as Goal | null) ?? null;
+      const profileLevel = ((profile as { level: string | null } | null)?.level as FitnessLevel | null) ?? null;
+      if (profileName && profileGoal && profileLevel) {
+        setUserName(profileName);
+        setName(profileName);
+        completeOnboarding(profileGoal, profileLevel);
+        router.replace("/(tabs)");
+        return true;
+      }
+      if (profileName) {
+        setUserName(profileName);
+        setName(profileName);
+      }
+      animateTo("problem");
+      return true;
+    } catch (e) {
+      console.log("[onboarding] finalizeLogin exception", e);
+      setAuthError("Could not load your account. Please try again.");
+      return false;
+    }
+  };
+
   const onEmailLogin = async () => {
     haptic();
     setAuthError(null);
@@ -414,12 +457,18 @@ export default function Onboarding() {
     }
     setAuthLoading(true);
     const res = await signInWithEmail(authEmail, authPassword);
-    setAuthLoading(false);
     if (!res.ok) {
-      setAuthError(res.error ?? "Login failed");
+      setAuthLoading(false);
+      const msg = (res.error ?? "").toLowerCase();
+      if (msg.includes("invalid login") || msg.includes("invalid credentials") || msg.includes("invalid email or password")) {
+        setAuthError("Incorrect email or password.");
+      } else {
+        setAuthError(res.error ?? "Login failed. Please try again.");
+      }
       return;
     }
-    router.replace("/(tabs)");
+    await finalizeLoginIfProfileComplete();
+    setAuthLoading(false);
   };
 
   const showProgress = PROGRESS_VISIBLE.includes(step);
