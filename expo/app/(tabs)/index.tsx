@@ -31,8 +31,6 @@ import WorkoutTimer from "@/components/WorkoutTimer";
 import { FOCUS_LABELS, PLAN_DURATION_DAYS } from "@/constants/personalizedPlan";
 import { getProgram } from "@/constants/programs";
 
-const CHALLENGE_DAYS = 30;
-
 function useCountdownToMidnight(active: boolean): string {
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
@@ -87,10 +85,6 @@ export default function HomeScreen() {
     : undefined;
 
   const todayKey = new Date().toISOString().slice(0, 10);
-
-  const progressPct = useMemo(() => {
-    return Math.min(100, Math.round((state.streak / CHALLENGE_DAYS) * 100));
-  }, [state.streak]);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -218,21 +212,6 @@ export default function HomeScreen() {
                 </Text>
               )}
             </View>
-          </View>
-
-          <View style={styles.progressMeta}>
-            <Text style={styles.progressLabel}>30-Day Challenge</Text>
-            <Text style={styles.progressCount}>
-              {Math.min(state.streak, CHALLENGE_DAYS)}/{CHALLENGE_DAYS}
-            </Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.progressFill, { width: `${progressPct}%` }]}
-            />
           </View>
         </View>
 

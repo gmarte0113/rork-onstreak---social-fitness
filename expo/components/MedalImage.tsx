@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Animated,
   PanResponder,
@@ -8,8 +8,8 @@ import {
   ViewStyle,
 } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { Lock } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 
 type Props = {
   uri: string;
@@ -33,6 +33,27 @@ export const MedalImage = React.memo(function MedalImage({
   const tiltX = useRef(new Animated.Value(0)).current;
   const tiltY = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
+  const sparkle = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!earned) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sparkle, {
+          toValue: 1,
+          duration: 1400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle, {
+          toValue: 0,
+          duration: 1400,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [earned, sparkle]);
 
   const pan = useMemo(
     () =>
@@ -107,15 +128,6 @@ export const MedalImage = React.memo(function MedalImage({
     outputRange: [`${-MAX_TILT}deg`, `${MAX_TILT}deg`],
   });
 
-  const highlightX = tiltY.interpolate({
-    inputRange: [-MAX_TILT, MAX_TILT],
-    outputRange: [-size * 0.25, size * 0.25],
-  });
-  const highlightY = tiltX.interpolate({
-    inputRange: [-MAX_TILT, MAX_TILT],
-    outputRange: [size * 0.25, -size * 0.25],
-  });
-
   const transform =
     Platform.OS === "web"
       ? [{ scale }]
@@ -125,6 +137,18 @@ export const MedalImage = React.memo(function MedalImage({
           { rotateY },
           { scale },
         ];
+
+  const sparkleOpacity = sparkle.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 0.25],
+  });
+  const sparkleScale = sparkle.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.92, 1.08],
+  });
+
+  const sparkleSize = Math.max(10, size * 0.14);
+  const sparkleOffset = size * 0.12;
 
   return (
     <View
@@ -148,32 +172,31 @@ export const MedalImage = React.memo(function MedalImage({
           contentFit="contain"
           transition={200}
         />
-        {earned && Platform.OS !== "web" && (
+        {earned && (
           <Animated.View
             pointerEvents="none"
             style={[
-              styles.highlight,
+              styles.sparkle,
               {
-                width: size * 1.1,
-                height: size * 0.45,
-                transform: [
-                  { translateX: highlightX },
-                  { translateY: highlightY },
-                  { rotate: "20deg" },
-                ],
+                top: sparkleOffset,
+                left: sparkleOffset,
+                width: sparkleSize,
+                height: sparkleSize,
+                opacity: sparkleOpacity,
+                transform: [{ scale: sparkleScale }],
               },
             ]}
           >
-            <LinearGradient
-              colors={[
-                "rgba(255,255,255,0)",
-                "rgba(255,255,255,0.18)",
-                "rgba(255,255,255,0)",
-              ]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={StyleSheet.absoluteFill}
-            />
+            <Svg
+              width={sparkleSize}
+              height={sparkleSize}
+              viewBox="0 0 24 24"
+            >
+              <Path
+                d="M12 0 L13.5 10.5 L24 12 L13.5 13.5 L12 24 L10.5 13.5 L0 12 L10.5 10.5 Z"
+                fill="#FFF5E6"
+              />
+            </Svg>
           </Animated.View>
         )}
       </Animated.View>
@@ -185,6 +208,7 @@ export const MedalImage = React.memo(function MedalImage({
     </View>
   );
 });
+
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
@@ -196,10 +220,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "transparent",
   },
-  highlight: {
+  sparkle: {
     position: "absolute",
-    top: "30%",
-    left: "-5%",
   },
   lockBadge: {
     position: "absolute",

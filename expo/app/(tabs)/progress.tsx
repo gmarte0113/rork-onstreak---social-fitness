@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from "react-native-svg";
 import {
   ChevronLeft,
@@ -199,45 +200,70 @@ export default function ProgressScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => router.push("/medals")}
-          testID="open-medals"
-          style={styles.insightsWrap}
-        >
-          <LinearGradient
-            colors={["#1A1410", "#3D1F0E", "#7A2F0A"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.insightsCard}
+        <View style={styles.medalsGlowWrap} pointerEvents="box-none">
+          <View style={styles.medalsGlow} pointerEvents="none" />
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => router.push("/medals")}
+            testID="open-medals"
+            style={styles.medalsGlassWrap}
           >
-            <View style={styles.insightsIcon}>
-              <Award color={Colors.primary} size={22} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.insightsTitle}>Medals</Text>
-              <Text style={styles.insightsSub}>
-                {state.medals.length} of {MEDALS.length} unlocked
-              </Text>
-              <View style={styles.medalsProgressTrack}>
-                <View
-                  style={[
-                    styles.medalsProgressFill,
-                    {
-                      width: `${Math.min(
-                        100,
-                        Math.round((state.medals.length / Math.max(1, MEDALS.length)) * 100)
-                      )}%`,
-                    },
-                  ]}
-                />
+            {Platform.OS !== "web" ? (
+              <BlurView
+                intensity={30}
+                tint="dark"
+                style={StyleSheet.absoluteFill}
+              />
+            ) : (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: "rgba(20,16,14,0.55)" },
+                ]}
+              />
+            )}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: "rgba(15,12,10,0.45)" },
+              ]}
+            />
+            <LinearGradient
+              colors={["rgba(255,255,255,0.10)", "rgba(255,255,255,0)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.medalsGlassHighlight}
+              pointerEvents="none"
+            />
+            <View style={styles.medalsGlassContent}>
+              <View style={styles.insightsIcon}>
+                <Award color={Colors.primary} size={22} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.insightsTitle}>Medals</Text>
+                <Text style={styles.insightsSub}>
+                  {state.medals.length} of {MEDALS.length} unlocked
+                </Text>
+                <View style={styles.medalsProgressTrack}>
+                  <View
+                    style={[
+                      styles.medalsProgressFill,
+                      {
+                        width: `${Math.min(
+                          100,
+                          Math.round((state.medals.length / Math.max(1, MEDALS.length)) * 100)
+                        )}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+              <View style={styles.insightsArrow}>
+                <ArrowRight color="#fff" size={18} />
               </View>
             </View>
-            <View style={styles.insightsArrow}>
-              <ArrowRight color="#fff" size={18} />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.statsRow}>
           <View style={[styles.statCol, styles.statColFirst]}>
@@ -839,6 +865,48 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     overflow: "hidden",
     marginBottom: 16,
+  },
+  medalsGlowWrap: {
+    marginBottom: 16,
+    position: "relative",
+  },
+  medalsGlow: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    top: 8,
+    bottom: 0,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,107,53,0.18)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#FF6B35",
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 6 },
+      },
+      android: { elevation: 0 },
+      default: {},
+    }),
+  },
+  medalsGlassWrap: {
+    borderRadius: 22,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,178,138,0.25)",
+  },
+  medalsGlassHighlight: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: "55%",
+  },
+  medalsGlassContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    gap: 14,
   },
   insightsCard: {
     flexDirection: "row",
