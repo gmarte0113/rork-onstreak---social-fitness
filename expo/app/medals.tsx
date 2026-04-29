@@ -38,7 +38,7 @@ function streakSubtitle(threshold: number | undefined): string {
   if (threshold === 7) return "A week";
   if (threshold === 14) return "Two weeks";
   if (threshold === 30) return "A month";
-  if (threshold === 60) return "Two months";
+  if (threshold === 90) return "Three months";
   return `${threshold} days`;
 }
 

@@ -68,14 +68,14 @@ const STREAK_MEDALS: Medal[] = [
     image: MEDAL_IMAGES.day30,
   },
   {
-    id: "streak-60",
-    title: "60 Day Streak",
+    id: "streak-90",
+    title: "90 Day Streak",
     subtitle: "Unstoppable",
     tier: "platinum",
     color: "#B9F2FF",
     bg: "rgba(185,242,255,0.15)",
     ring: "#B9F2FF",
-    threshold: 60,
+    threshold: 90,
     kind: "streak",
     image: MEDAL_IMAGES.day90,
   },
@@ -152,6 +152,6 @@ export function streakMedalsEarned(streak: number): MedalId[] {
   if (streak >= 7) out.push("streak-7");
   if (streak >= 14) out.push("streak-14");
   if (streak >= 30) out.push("streak-30");
-  if (streak >= 60) out.push("streak-60");
+  if (streak >= 90) out.push("streak-90");
   return out;
 }
