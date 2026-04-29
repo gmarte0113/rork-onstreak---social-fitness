@@ -52,6 +52,23 @@ export function ReviewPromptModal() {
     }
   }, [visible, opacity, scale]);
 
+  const dismissOnly = () => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 0.94,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setVisible(false);
+    });
+  };
+
   const close = () => {
     Animated.parallel([
       Animated.timing(opacity, {
@@ -95,11 +112,11 @@ export function ReviewPromptModal() {
       visible={visible}
       transparent
       animationType="none"
-      onRequestClose={onNo}
+      onRequestClose={dismissOnly}
       statusBarTranslucent
     >
       <Animated.View style={[styles.backdrop, { opacity }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onNo} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={dismissOnly} />
         <Animated.View
           style={[
             styles.card,
