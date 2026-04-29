@@ -33,6 +33,7 @@ import {
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
+import AppBackground from "@/components/AppBackground";
 import { GROUP_ICONS, MAX_GROUP_MEMBERS } from "@/constants/groupIcons";
 import { toDateKey } from "@/constants/workouts";
 
@@ -78,6 +79,7 @@ export default function GroupScreen() {
   if (!group) {
     return (
       <View style={styles.safe}>
+        <AppBackground />
         <Stack.Screen options={{ title: "Group" }} />
         <Text style={styles.missing}>Group not found.</Text>
       </View>
@@ -174,6 +176,7 @@ export default function GroupScreen() {
 
   return (
     <View style={styles.safe}>
+      <AppBackground />
       <Stack.Screen options={{ title: group.name }} />
       <ScrollView contentContainerStyle={styles.scroll} ref={scrollRef}>
         <LinearGradient
@@ -638,7 +641,7 @@ function IconPickerModal({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
   scroll: { padding: 20, paddingBottom: 60 },
   missing: { color: Colors.textMuted, padding: 40, textAlign: "center" },
   hero: {

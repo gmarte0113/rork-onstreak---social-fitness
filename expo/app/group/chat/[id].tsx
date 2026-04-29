@@ -13,6 +13,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { Send } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
+import AppBackground from "@/components/AppBackground";
 
 export default function GroupChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,6 +42,7 @@ export default function GroupChatScreen() {
   if (!group) {
     return (
       <View style={styles.safe}>
+        <AppBackground />
         <Stack.Screen options={{ title: "Chat" }} />
         <Text style={styles.missing}>Group not found.</Text>
       </View>
@@ -54,8 +56,10 @@ export default function GroupChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
+    <View style={styles.safe}>
+      <AppBackground />
+      <KeyboardAvoidingView
+      style={styles.kav}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
     >
@@ -126,11 +130,13 @@ export default function GroupChatScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
+  kav: { flex: 1 },
   missing: { color: Colors.textMuted, padding: 40, textAlign: "center" },
   list: { padding: 16, gap: 8 },
   empty: {
