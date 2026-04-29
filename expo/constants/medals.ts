@@ -18,16 +18,16 @@ export type Medal = {
 };
 
 export const MEDAL_IMAGES = {
-  streak1: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/kbhstbsrkt5ifrtk2c9p7.png",
-  streak7: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cynpmyezte78wgxih7pej.png",
-  challenge14: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/t06vdpv29i1x8xm32ck41.png",
-  streak14: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/tczwkcexsdhvyh9mnkmt7.png",
-  challenge21: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/pgl5xjstep60j6bc7ct75.png",
-  day30: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/mp5q0cixcgg0y98ih96jd.png",
-  day90: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/all1r3mim1uq3jorkakei.png",
-  dailyStarter: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/m9mn2db6g7qegcfri4uuq.png",
-  personalPlan: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/ye9pt0icypq9b0gugut1r.png",
-  weightLossPlan: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/2ryopd62anexo4yd5dk3j.png",
+  streak1: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/o788fvgb34ocqc79ho8v5.png",
+  streak7: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/jzcnmsoh6pmyi3q4u1zn4.png",
+  streak14: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/6j8xkxjswa4anzom63vcc.png",
+  day30: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/dnvgeq7abji6ebvf35i0k.png",
+  dailyStarter: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/8ayf2l8xidzdcgfl8yes9.png",
+  personalPlan: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/geigsyw5r62fsswdwmes0.png",
+  challenge14: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/53u071s7k8nr3m6nfc5ao.png",
+  challenge21: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/j9s68tm8dkusy0s3picxe.png",
+  day90: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/91vagbspayi1xck7djv9f.png",
+  weightLossPlan: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/gjxu4urjeqy5lr9op72rg.png",
 } as const;
 
 const STREAK_MEDALS: Medal[] = [

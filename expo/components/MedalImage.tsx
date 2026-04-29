@@ -128,13 +128,15 @@ export const MedalImage = React.memo(function MedalImage({
 
   return (
     <View
-      style={[{ width: size, height: size }, style]}
+      style={[styles.wrapper, { width: size, height: size }, style]}
       {...pan.panHandlers}
     >
       <Animated.View
         style={[
           styles.inner,
           {
+            width: size,
+            height: size,
             transform,
             opacity: earned ? 1 : 0.5,
           },
@@ -142,7 +144,7 @@ export const MedalImage = React.memo(function MedalImage({
       >
         <Image
           source={{ uri }}
-          style={{ width: size, height: size }}
+          style={{ width: size, height: size, backgroundColor: "transparent" }}
           contentFit="contain"
           transition={200}
         />
@@ -184,12 +186,15 @@ export const MedalImage = React.memo(function MedalImage({
   );
 });
 const styles = StyleSheet.create({
-  inner: {
-    width: "100%",
-    height: "100%",
+  wrapper: {
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
+    backgroundColor: "transparent",
+  },
+  inner: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
   },
   highlight: {
     position: "absolute",
