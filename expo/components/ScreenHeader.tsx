@@ -24,7 +24,11 @@ export function ScreenHeader({
   const insets = useSafeAreaInsets();
 
   const onBack = () => {
-    if (router.canGoBack()) router.back();
+    try {
+      router.back();
+    } catch (e) {
+      console.log('[ScreenHeader] back navigation failed', e);
+    }
   };
 
   const BackButton = (
