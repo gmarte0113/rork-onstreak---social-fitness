@@ -49,20 +49,20 @@ function RootLayoutNav() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="workout" options={{ presentation: "modal", title: "Today's Workout" }} />
+      <Stack.Screen name="workout" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="workout-photo" options={{ presentation: "fullScreenModal", headerShown: false }} />
-      <Stack.Screen name="log-weight" options={{ presentation: "modal", title: "Log Weight" }} />
-      <Stack.Screen name="settings" options={{ title: "Settings" }} />
-      <Stack.Screen name="locked" options={{ presentation: "modal", title: "Premium" }} />
+      <Stack.Screen name="log-weight" options={{ presentation: "modal", headerShown: false }} />
+      <Stack.Screen name="settings" options={{ headerShown: false }} />
+      <Stack.Screen name="locked" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="paywall" options={{ presentation: "modal", headerShown: false }} />
-      <Stack.Screen name="program/[id]" options={{ title: "Program" }} />
-      <Stack.Screen name="recap/global" options={{ title: "30-Day Recap" }} />
-      <Stack.Screen name="recap/[id]" options={{ title: "Recap" }} />
-      <Stack.Screen name="group/[id]" options={{ title: "Group" }} />
-      <Stack.Screen name="group/chat/[id]" options={{ title: "Chat" }} />
-      <Stack.Screen name="insights" options={{ title: "Insights" }} />
-      <Stack.Screen name="plan/setup" options={{ title: "Personalized Plan" }} />
-      <Stack.Screen name="plan/index" options={{ title: "My Plan" }} />
+      <Stack.Screen name="program/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="recap/global" options={{ headerShown: false }} />
+      <Stack.Screen name="recap/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="group/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="group/chat/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="insights" options={{ headerShown: false }} />
+      <Stack.Screen name="plan/setup" options={{ headerShown: false }} />
+      <Stack.Screen name="plan/index" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Check, Info, Lock, Pause, Play, Timer, X } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
@@ -34,6 +35,7 @@ function parseExerciseSeconds(reps: string): number | null {
 
 export default function WorkoutScreen() {
   const { todayWorkout, completeTodaysWorkout, completedToday, state, isInAnyGroup } = useApp();
+  const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<"ready" | "done">(
     completedToday ? "done" : "ready"
   );
@@ -116,7 +118,7 @@ export default function WorkoutScreen() {
       />
 
       <TouchableOpacity
-        style={styles.closeBtn}
+        style={[styles.closeBtn, { top: insets.top + 8 }]}
         onPress={() => router.back()}
         testID="close-workout"
       >
@@ -407,7 +409,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   closeBtn: {
     position: "absolute",
-    top: 16,
     right: 16,
     zIndex: 10,
     width: 40,

@@ -11,6 +11,7 @@ import {
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import {
   ArrowRight,
@@ -21,6 +22,7 @@ import {
   Sparkles,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
 import { getProgram } from "@/constants/programs";
 import { maybeRequestFirstWorkoutReview } from "@/lib/review";
@@ -32,12 +34,14 @@ export default function ProgramScreen() {
   const { state, completeProgramDay, isInAnyGroup, enrollInProgram } = useApp();
   const program = useMemo(() => getProgram(id ?? ""), [id]);
   const [timerDone, setTimerDone] = useState<boolean>(false);
+  const insets = useSafeAreaInsets();
 
   if (!program) {
     return (
       <View style={styles.safe}>
-        <Stack.Screen options={{ title: "Not found" }} />
-        <Text style={styles.missing}>Program not found.</Text>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScreenHeader />
+        <Text style={[styles.missing, { paddingTop: insets.top + 80 }]}>Program not found.</Text>
       </View>
     );
   }
@@ -163,15 +167,12 @@ export default function ProgramScreen() {
 
   return (
     <View style={styles.safe}>
-      <Stack.Screen
-        options={{
-          title: program.title,
-          headerStyle: { backgroundColor: Colors.bg },
-          headerTintColor: Colors.text,
-        }}
-      />
+      <ScreenHeader />
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 56 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <LinearGradient
@@ -534,14 +535,14 @@ function DayRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20, paddingBottom: 80 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 80 },
   missing: { color: Colors.textMuted, padding: 40, textAlign: "center" },
   heroBg: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 220,
+    height: 320,
   },
   header: { marginBottom: 20 },
   tagRow: { flexDirection: "row", gap: 8, marginBottom: 14 },

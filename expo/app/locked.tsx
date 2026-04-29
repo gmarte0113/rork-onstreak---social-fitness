@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Lock, Check } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 
 const FEATURES = [
   "Unlock all challenges (Abs, Legs, Reset)",
@@ -19,6 +20,7 @@ export default function LockedScreen() {
         colors={["#2A1810", "#0A0A0B"]}
         style={StyleSheet.absoluteFill}
       />
+      <ScreenHeader />
       <View style={styles.body}>
         <View style={styles.lockCircle}>
           <Lock color={Colors.accent} size={32} />

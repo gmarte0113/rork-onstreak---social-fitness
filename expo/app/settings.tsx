@@ -38,6 +38,7 @@ import {
   Shield,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { useApp } from "@/providers/AppProvider";
 import type { FitnessLevel, Goal } from "@/constants/workouts";
 import type { WeightUnit } from "@/providers/AppProvider";
@@ -150,10 +151,9 @@ export default function SettingsScreen() {
   }, [state.reminderHour, state.reminderMinute]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scroll}
-    >
+    <View style={styles.container}>
+      <ScreenHeader title="Settings" variant="bar" />
+      <ScrollView contentContainerStyle={styles.scroll}>
       <Text style={styles.section}>PROFILE</Text>
       <View style={styles.card}>
         <TouchableOpacity
@@ -446,6 +446,7 @@ export default function SettingsScreen() {
         }}
       />
     </ScrollView>
+    </View>
   );
 }
 

@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, X } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { toDateKey } from "@/constants/workouts";
 import { useApp } from "@/providers/AppProvider";
 import type { WeightUnit } from "@/providers/AppProvider";
@@ -98,6 +99,7 @@ export default function LogWeightScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      <ScreenHeader title="Log Weight" variant="bar" />
       <View style={styles.body}>
         <Text style={styles.label}>CURRENT WEIGHT</Text>
 

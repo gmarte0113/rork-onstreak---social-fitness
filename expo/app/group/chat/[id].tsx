@@ -9,12 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Send } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
 import { useChatRead } from "@/providers/ChatReadProvider";
 import AppBackground from "@/components/AppBackground";
+import { ScreenHeader } from "@/components/ScreenHeader";
 
 function formatTime(ts: number): string {
   try {
@@ -63,7 +64,7 @@ export default function GroupChatScreen() {
     return (
       <View style={styles.safe}>
         <AppBackground />
-        <Stack.Screen options={{ title: "Chat" }} />
+        <ScreenHeader title="Chat" variant="bar" />
         <Text style={styles.missing}>Group not found.</Text>
       </View>
     );
@@ -78,12 +79,12 @@ export default function GroupChatScreen() {
   return (
     <View style={styles.safe}>
       <AppBackground />
+      <ScreenHeader title={group.name} variant="bar" />
       <KeyboardAvoidingView
       style={styles.kav}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
     >
-      <Stack.Screen options={{ title: group.name }} />
       {messages.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>Be the first to say hi.</Text>

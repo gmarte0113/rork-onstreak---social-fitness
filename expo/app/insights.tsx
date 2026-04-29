@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -23,6 +23,7 @@ import {
 } from "lucide-react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { useApp } from "@/providers/AppProvider";
 import { toDateKey } from "@/constants/workouts";
 import { supabase, isSupabaseConfigured, PROFILES_TABLE } from "@/lib/supabase";
@@ -200,15 +201,7 @@ export default function InsightsScreen() {
 
   return (
     <View style={styles.safe}>
-      <Stack.Screen
-        options={{
-          title: "Your Progress",
-          headerStyle: { backgroundColor: Colors.bg },
-          headerTintColor: Colors.text,
-          headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: "800" },
-        }}
-      />
+      <ScreenHeader title="Your Progress" variant="bar" />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}

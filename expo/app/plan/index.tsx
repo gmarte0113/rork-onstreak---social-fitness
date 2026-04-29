@@ -9,7 +9,8 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import {
   ArrowRight,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
 import { maybeRequestFirstWorkoutReview } from "@/lib/review";
 import {
@@ -45,6 +47,7 @@ export default function PlanScreen() {
   } = useApp();
   const isActive = state.activeEnrollment?.kind === "plan";
   const [timerDone, setTimerDone] = useState<boolean>(false);
+  const insets = useSafeAreaInsets();
 
   const plan = state.personalizedPlan;
 
@@ -82,8 +85,8 @@ export default function PlanScreen() {
   if (!plan) {
     return (
       <View style={styles.safe}>
-        <Stack.Screen options={{ title: "Personalized Plan" }} />
-        <View style={styles.emptyWrap}>
+        <ScreenHeader />
+        <View style={[styles.emptyWrap, { paddingTop: insets.top + 56 }]}>
           <Text style={styles.emptyTitle}>No plan yet</Text>
           <Text style={styles.emptySub}>
             Start a personalized plan tailored to your focus areas.
@@ -171,23 +174,23 @@ export default function PlanScreen() {
 
   return (
     <View style={styles.safe}>
-      <Stack.Screen
-        options={{
-          title: personalizedPlanName ?? "My Plan",
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={onRestart}
-              hitSlop={10}
-              style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
-              testID="plan-restart"
-            >
-              <RotateCcw color={Colors.textMuted} size={18} />
-            </TouchableOpacity>
-          ),
-        }}
+      <ScreenHeader
+        right={
+          <TouchableOpacity
+            onPress={onRestart}
+            hitSlop={10}
+            style={styles.headerActionBtn}
+            testID="plan-restart"
+          >
+            <RotateCcw color={Colors.text} size={16} />
+          </TouchableOpacity>
+        }
       />
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 56 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <LinearGradient
@@ -470,7 +473,17 @@ function TimelineRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20, paddingBottom: 80 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 80 },
+  headerActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   emptyWrap: { padding: 40, gap: 14, alignItems: "center" },
   emptyTitle: { color: Colors.text, fontSize: 20, fontWeight: "800" },
   emptySub: {
@@ -484,7 +497,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 220,
+    height: 320,
   },
   header: { marginBottom: 20 },
   focusChips: { flexDirection: "row", gap: 6, marginBottom: 12 },

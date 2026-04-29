@@ -9,14 +9,17 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowRight, Award, Share2 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
 import { PROGRAMS, getProgram } from "@/constants/programs";
 
 export default function ProgramRecapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useApp();
+  const insets = useSafeAreaInsets();
   const program = useMemo(() => getProgram(id ?? ""), [id]);
   const progress = program ? state.programs[program.id] : undefined;
 
@@ -38,8 +41,9 @@ export default function ProgramRecapScreen() {
   if (!program) {
     return (
       <View style={styles.safe}>
-        <Stack.Screen options={{ title: "Recap" }} />
-        <Text style={styles.missing}>Program not found.</Text>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScreenHeader />
+        <Text style={[styles.missing, { paddingTop: insets.top + 80 }]}>Program not found.</Text>
       </View>
     );
   }
@@ -62,8 +66,13 @@ export default function ProgramRecapScreen() {
 
   return (
     <View style={styles.safe}>
-      <Stack.Screen options={{ title: `${program.title} Recap` }} />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScreenHeader />
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 56 },
+        ]}
+      >
         <LinearGradient
           colors={[program.accentBg, "transparent"]}
           style={styles.hero}
@@ -167,14 +176,14 @@ export default function ProgramRecapScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20, paddingBottom: 60 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 60 },
   missing: { color: Colors.textMuted, padding: 40, textAlign: "center" },
   hero: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 240,
+    height: 340,
   },
   crown: {
     width: 72,

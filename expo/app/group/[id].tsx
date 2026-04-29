@@ -14,6 +14,7 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import {
   AlertTriangle,
@@ -35,6 +36,7 @@ import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
 import { useChatRead } from "@/providers/ChatReadProvider";
 import AppBackground from "@/components/AppBackground";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { GROUP_ICONS, MAX_GROUP_MEMBERS } from "@/constants/groupIcons";
 import { toDateKey } from "@/constants/workouts";
 
@@ -42,6 +44,7 @@ export default function GroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, sendNudge, leaveGroup, deleteGroup, setGroupIcon, canSendNudge, refreshGroupPhotos } = useApp();
   const { getLastSeen } = useChatRead();
+  const insets = useSafeAreaInsets();
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -93,8 +96,9 @@ export default function GroupScreen() {
     return (
       <View style={styles.safe}>
         <AppBackground />
-        <Stack.Screen options={{ title: "Group" }} />
-        <Text style={styles.missing}>Group not found.</Text>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScreenHeader />
+        <Text style={[styles.missing, { paddingTop: insets.top + 80 }]}>Group not found.</Text>
       </View>
     );
   }
@@ -190,8 +194,14 @@ export default function GroupScreen() {
   return (
     <View style={styles.safe}>
       <AppBackground />
-      <Stack.Screen options={{ title: group.name }} />
-      <ScrollView contentContainerStyle={styles.scroll} ref={scrollRef}>
+      <ScreenHeader />
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 56 },
+        ]}
+        ref={scrollRef}
+      >
         <LinearGradient
           colors={["rgba(255,107,53,0.18)", "transparent"]}
           style={styles.hero}
@@ -664,7 +674,7 @@ function IconPickerModal({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "transparent" },
-  scroll: { padding: 20, paddingBottom: 60 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 60 },
   missing: { color: Colors.textMuted, padding: 40, textAlign: "center" },
   hero: {
     position: "absolute",

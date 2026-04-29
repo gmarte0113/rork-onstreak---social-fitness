@@ -8,12 +8,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Svg, { Path, Circle, Ellipse, G } from "react-native-svg";
 import { ArrowRight, Check, Info, Lock, Sparkles } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { useApp } from "@/providers/AppProvider";
 import { getProgram } from "@/constants/programs";
 import {
@@ -29,6 +31,7 @@ const AREAS: FocusArea[] = ["abs", "arms", "legs", "full_body"];
 export default function PlanSetupScreen() {
   const { state, startPersonalizedPlan } = useApp();
   const isPremium = state.isPremium;
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<FocusArea[]>([]);
   const [limitMsg, setLimitMsg] = useState<boolean>(false);
 
@@ -102,9 +105,12 @@ export default function PlanSetupScreen() {
 
   return (
     <View style={styles.safe}>
-      <Stack.Screen options={{ title: "Personalized Plan" }} />
+      <ScreenHeader />
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 56 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Build your plan</Text>
@@ -372,7 +378,7 @@ function BodyDiagram({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20, paddingBottom: 80 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 80 },
   title: {
     color: Colors.text,
     fontSize: 30,
