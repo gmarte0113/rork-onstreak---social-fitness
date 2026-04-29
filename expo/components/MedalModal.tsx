@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { Award, Share2, X } from "lucide-react-native";
+import { Share2, X } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { getMedal } from "@/constants/medals";
+import { MedalImage } from "@/components/MedalImage";
 import { useApp } from "@/providers/AppProvider";
 
 export function MedalModal() {
@@ -116,18 +117,12 @@ export function MedalModal() {
               { transform: [{ rotate: spin }] },
             ]}
           >
-            <LinearGradient
-              colors={[medal.color, "#ffffff22", medal.color]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.medalRing}
-            >
-              <View
-                style={[styles.medalInner, { backgroundColor: medal.bg }]}
-              >
-                <Award color={medal.color} size={58} strokeWidth={2.4} />
-              </View>
-            </LinearGradient>
+            <MedalImage
+              uri={medal.image}
+              size={180}
+              earned
+              showLock={false}
+            />
           </Animated.View>
 
           <Text style={styles.title}>{medal.title}</Text>

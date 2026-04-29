@@ -14,7 +14,21 @@ export type Medal = {
   ring: string;
   threshold?: number;
   kind: "streak" | "program" | "personal-plan";
+  image: string;
 };
+
+export const MEDAL_IMAGES = {
+  streak1: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/kbhstbsrkt5ifrtk2c9p7.png",
+  streak7: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cynpmyezte78wgxih7pej.png",
+  challenge14: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/t06vdpv29i1x8xm32ck41.png",
+  streak14: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/tczwkcexsdhvyh9mnkmt7.png",
+  challenge21: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/pgl5xjstep60j6bc7ct75.png",
+  day30: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/mp5q0cixcgg0y98ih96jd.png",
+  day90: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/all1r3mim1uq3jorkakei.png",
+  dailyStarter: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/m9mn2db6g7qegcfri4uuq.png",
+  personalPlan: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/ye9pt0icypq9b0gugut1r.png",
+  weightLossPlan: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/2ryopd62anexo4yd5dk3j.png",
+} as const;
 
 const STREAK_MEDALS: Medal[] = [
   {
@@ -27,6 +41,7 @@ const STREAK_MEDALS: Medal[] = [
     ring: "#CD7F32",
     threshold: 7,
     kind: "streak",
+    image: MEDAL_IMAGES.streak7,
   },
   {
     id: "streak-14",
@@ -38,6 +53,7 @@ const STREAK_MEDALS: Medal[] = [
     ring: "#C0C0C8",
     threshold: 14,
     kind: "streak",
+    image: MEDAL_IMAGES.streak14,
   },
   {
     id: "streak-30",
@@ -49,6 +65,7 @@ const STREAK_MEDALS: Medal[] = [
     ring: "#FFD54A",
     threshold: 30,
     kind: "streak",
+    image: MEDAL_IMAGES.day30,
   },
   {
     id: "streak-60",
@@ -60,6 +77,7 @@ const STREAK_MEDALS: Medal[] = [
     ring: "#B9F2FF",
     threshold: 60,
     kind: "streak",
+    image: MEDAL_IMAGES.day90,
   },
 ];
 
@@ -74,7 +92,20 @@ const PERSONAL_PLAN_MEDAL: Medal = {
   bg: "rgba(255,107,53,0.15)",
   ring: "#FF6B35",
   kind: "personal-plan",
+  image: MEDAL_IMAGES.personalPlan,
 };
+
+function imageForProgram(programId: string, isChallenge: boolean): string {
+  if (programId === "daily-starter") return MEDAL_IMAGES.dailyStarter;
+  if (programId === "weight-loss-60") return MEDAL_IMAGES.weightLossPlan;
+  if (programId === "transformation-90") return MEDAL_IMAGES.day90;
+  if (programId === "abs-30") return MEDAL_IMAGES.day30;
+  if (programId === "legs-21") return MEDAL_IMAGES.challenge21;
+  if (programId === "reset-14") return MEDAL_IMAGES.challenge14;
+  if (programId === "lean-muscle-45") return MEDAL_IMAGES.personalPlan;
+  if (programId === "stay-active-30") return MEDAL_IMAGES.dailyStarter;
+  return isChallenge ? MEDAL_IMAGES.challenge14 : MEDAL_IMAGES.personalPlan;
+}
 
 export function programMedalId(programId: string): string {
   return `program:${programId}`;
@@ -95,6 +126,7 @@ function medalForProgram(programId: string): Medal | undefined {
     bg: p.accentBg,
     ring: p.accent,
     kind: "program",
+    image: imageForProgram(programId, p.type === "challenge"),
   };
 }
 

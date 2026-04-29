@@ -8,15 +8,9 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, {
-  Polygon,
-  Defs,
-  LinearGradient as SvgGradient,
-  Stop,
-} from "react-native-svg";
-import { Lock, Flame } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { MedalImage } from "@/components/MedalImage";
 import { useApp } from "@/providers/AppProvider";
 import { MEDALS, type Medal } from "@/constants/medals";
 import { getProgram } from "@/constants/programs";
@@ -28,7 +22,7 @@ const COLUMNS = 3;
 const TILE_W = Math.floor(
   (SCREEN_W - GRID_PADDING_H * 2 - GRID_GAP * (COLUMNS - 1)) / COLUMNS
 );
-const HEX_SIZE = TILE_W - 24;
+const MEDAL_SIZE = TILE_W - 8;
 
 type Section = {
   key: string;
@@ -160,7 +154,6 @@ export default function MedalsScreen() {
 
 function MedalTile({ medal, earned }: { medal: Medal; earned: boolean }) {
   const isStreak = medal.kind === "streak";
-  const big = isStreak ? streakLabel(medal.threshold) : null;
   const displayTitle = isStreak
     ? `${medal.threshold}-Day Streak`
     : medal.title;
@@ -172,36 +165,8 @@ function MedalTile({ medal, earned }: { medal: Medal; earned: boolean }) {
 
   return (
     <View style={styles.tile}>
-      <View
-        style={[
-          styles.tileInner,
-          earned ? styles.tileInnerEarned : styles.tileInnerLocked,
-        ]}
-      >
-        <Hexagon size={HEX_SIZE} earned={earned} accent={medal.color}>
-          {big ? (
-            <Text
-              style={[
-                styles.hexNumber,
-                !earned && { color: "rgba(255,255,255,0.45)" },
-              ]}
-            >
-              {big}
-            </Text>
-          ) : (
-            <Flame
-              color={earned ? "#fff" : "rgba(255,255,255,0.45)"}
-              size={Math.round(HEX_SIZE * 0.42)}
-              fill={earned ? "#fff" : "transparent"}
-              strokeWidth={2.2}
-            />
-          )}
-        </Hexagon>
-        {!earned && (
-          <View style={styles.lockBadge}>
-            <Lock color="#9A9AA3" size={12} strokeWidth={2.4} />
-          </View>
-        )}
+      <View style={styles.tileInner}>
+        <MedalImage uri={medal.image} size={MEDAL_SIZE} earned={earned} />
       </View>
       <Text
         style={[styles.tileTitle, !earned && styles.tileTitleLocked]}
@@ -215,84 +180,6 @@ function MedalTile({ medal, earned }: { medal: Medal; earned: boolean }) {
       >
         {sub}
       </Text>
-    </View>
-  );
-}
-
-function Hexagon({
-  size,
-  earned,
-  accent,
-  children,
-}: {
-  size: number;
-  earned: boolean;
-  accent: string;
-  children?: React.ReactNode;
-}) {
-  const w = size;
-  const h = size * 1.08;
-  const cx = w / 2;
-  const points = [
-    `${cx},0`,
-    `${w},${h * 0.27}`,
-    `${w},${h * 0.73}`,
-    `${cx},${h}`,
-    `0,${h * 0.73}`,
-    `0,${h * 0.27}`,
-  ].join(" ");
-
-  const ringPoints = (() => {
-    const inset = 4;
-    const iw = w - inset * 2;
-    const ih = h - inset * 2;
-    const icx = w / 2;
-    return [
-      `${icx},${inset}`,
-      `${icx + iw / 2},${inset + ih * 0.27}`,
-      `${icx + iw / 2},${inset + ih * 0.73}`,
-      `${icx},${inset + ih}`,
-      `${icx - iw / 2},${inset + ih * 0.73}`,
-      `${icx - iw / 2},${inset + ih * 0.27}`,
-    ].join(" ");
-  })();
-
-  const gradId = `hex-${earned ? "on" : "off"}-${Math.round(size)}`;
-
-  return (
-    <View style={{ width: w, height: h, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={w} height={h} style={StyleSheet.absoluteFill}>
-        <Defs>
-          <SvgGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            {earned ? (
-              <>
-                <Stop offset="0" stopColor="#FF8A4D" stopOpacity="1" />
-                <Stop offset="1" stopColor="#D24A12" stopOpacity="1" />
-              </>
-            ) : (
-              <>
-                <Stop offset="0" stopColor="#1F1F23" stopOpacity="1" />
-                <Stop offset="1" stopColor="#141418" stopOpacity="1" />
-              </>
-            )}
-          </SvgGradient>
-        </Defs>
-        <Polygon
-          points={points}
-          fill={`url(#${gradId})`}
-          stroke={earned ? accent : "rgba(255,255,255,0.06)"}
-          strokeWidth={earned ? 1.5 : 1}
-        />
-        <Polygon
-          points={ringPoints}
-          fill="none"
-          stroke={earned ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.04)"}
-          strokeWidth={1.2}
-        />
-      </Svg>
-      <View style={{ alignItems: "center", justifyContent: "center" }}>
-        {children}
-      </View>
     </View>
   );
 }
@@ -385,40 +272,9 @@ const styles = StyleSheet.create({
   tileInner: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    paddingVertical: 8,
-  },
-  tileInnerEarned: {
-    backgroundColor: "#171318",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
-  },
-  tileInnerLocked: {
-    backgroundColor: "rgba(20,20,24,0.6)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
-  },
-  hexNumber: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-  },
-  lockBadge: {
-    position: "absolute",
-    right: 14,
-    bottom: 14,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#0F0F11",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "transparent",
   },
   tileTitle: {
     color: Colors.text,
