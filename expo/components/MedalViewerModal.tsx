@@ -25,6 +25,8 @@ type Props = {
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const MEDAL_SIZE = Math.min(SCREEN_W * 0.78, SCREEN_H * 0.5);
+const WRAP_PADDING = 60;
+const WRAP_SIZE = MEDAL_SIZE + WRAP_PADDING * 2;
 const MAX_TILT = 18;
 const MAX_TRANSLATE = 12;
 
@@ -150,8 +152,8 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
             style={[
               styles.medalWrap,
               {
-                width: MEDAL_SIZE,
-                height: MEDAL_SIZE,
+                width: WRAP_SIZE,
+                height: WRAP_SIZE,
                 opacity: enterOpacity,
                 transform,
               },
@@ -213,12 +215,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+    overflow: "visible",
   },
   medalWrap: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 28,
+    marginBottom: 0,
     backgroundColor: "transparent",
+    overflow: "visible",
   },
   title: {
     color: Colors.text,
