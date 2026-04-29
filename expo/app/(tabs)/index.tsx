@@ -523,27 +523,27 @@ function StreakCard({
           toValue: -22,
           duration: 260,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(oldNumOpacity, {
           toValue: 0,
           duration: 220,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(newNumTY, {
           toValue: 0,
           duration: 320,
           delay: 60,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(newNumOpacity, {
           toValue: 1,
           duration: 240,
           delay: 60,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
