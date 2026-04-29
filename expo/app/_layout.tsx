@@ -61,6 +61,7 @@ function RootLayoutNav() {
       <Stack.Screen name="group/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="group/chat/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="insights" options={{ headerShown: false }} />
+      <Stack.Screen name="medals" options={{ headerShown: false }} />
       <Stack.Screen name="plan/setup" options={{ headerShown: false }} />
       <Stack.Screen name="plan/index" options={{ headerShown: false }} />
     </Stack>

@@ -19,7 +19,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import {
-  Award,
   Bell,
   Camera,
   ChevronRight,
@@ -37,7 +36,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
-import { MEDALS, getMedal } from "@/constants/medals";
 import { MAX_GROUP_MEMBERS } from "@/constants/groupIcons";
 import { containsProfanity, getProfanityError } from "@/utils/profanity";
 import {
@@ -55,11 +53,6 @@ export default function SocialScreen() {
   const [joinInfoOpen, setJoinInfoOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
   const [codeInput, setCodeInput] = useState<string>("");
-
-  const earnedIds = useMemo(
-    () => new Set(state.medals.map((m) => m.id)),
-    [state.medals]
-  );
 
   const individualQuery = useQuery({
     queryKey: ["leaderboard", "individuals"],
@@ -409,54 +402,6 @@ export default function SocialScreen() {
           </View>
           <ChevronRight color={Colors.textMuted} size={18} />
         </TouchableOpacity>
-
-        <View style={styles.sectionRow}>
-          <Text style={styles.section}>MEDALS</Text>
-          <Text style={styles.sectionRight}>
-            {state.medals.length}/{MEDALS.length}
-          </Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.medalsScroll}
-        >
-          {MEDALS.map((m) => {
-            const earned = earnedIds.has(m.id);
-            return (
-              <View
-                key={m.id}
-                style={[
-                  styles.medalCard,
-                  earned && { borderColor: m.color },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.medalCircle,
-                    { backgroundColor: earned ? m.bg : Colors.surfaceElevated },
-                  ]}
-                >
-                  <Award
-                    color={earned ? m.color : Colors.textDim}
-                    size={28}
-                    strokeWidth={2.2}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.medalName,
-                    !earned && { color: Colors.textDim },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {m.title}
-                </Text>
-                {!earned && <Text style={styles.medalLock}>Locked</Text>}
-              </View>
-            );
-          })}
-        </ScrollView>
 
         <View style={styles.sectionRow}>
           <Text style={styles.section}>GROUPS</Text>
@@ -959,35 +904,6 @@ const styles = StyleSheet.create({
   sectionRight: {
     color: Colors.textDim,
     fontSize: 11,
-    fontWeight: "700",
-  },
-  medalsScroll: { gap: 10, paddingRight: 20, marginBottom: 24 },
-  medalCard: {
-    width: 110,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 12,
-    alignItems: "center",
-    gap: 8,
-  },
-  medalCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  medalName: {
-    color: Colors.text,
-    fontSize: 12,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  medalLock: {
-    color: Colors.textDim,
-    fontSize: 10,
     fontWeight: "700",
   },
   groupActions: { flexDirection: "row", gap: 10, marginBottom: 14 },

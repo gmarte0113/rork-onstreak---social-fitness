@@ -28,10 +28,12 @@ import {
   LineChart,
   Plus,
   ChevronsRight,
+  Award,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
 import { toDateKey } from "@/constants/workouts";
+import { MEDALS } from "@/constants/medals";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -190,6 +192,46 @@ export default function ProgressScreen() {
               <Text style={styles.insightsSub}>
                 See your reps, time & consistency
               </Text>
+            </View>
+            <View style={styles.insightsArrow}>
+              <ArrowRight color="#fff" size={18} />
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push("/medals")}
+          testID="open-medals"
+          style={styles.insightsWrap}
+        >
+          <LinearGradient
+            colors={["#1A1410", "#3D1F0E", "#7A2F0A"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.insightsCard}
+          >
+            <View style={styles.insightsIcon}>
+              <Award color={Colors.primary} size={22} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.insightsTitle}>Medals</Text>
+              <Text style={styles.insightsSub}>
+                {state.medals.length} of {MEDALS.length} unlocked
+              </Text>
+              <View style={styles.medalsProgressTrack}>
+                <View
+                  style={[
+                    styles.medalsProgressFill,
+                    {
+                      width: `${Math.min(
+                        100,
+                        Math.round((state.medals.length / Math.max(1, MEDALS.length)) * 100)
+                      )}%`,
+                    },
+                  ]}
+                />
+              </View>
             </View>
             <View style={styles.insightsArrow}>
               <ArrowRight color="#fff" size={18} />
@@ -823,6 +865,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  medalsProgressTrack: {
+    marginTop: 8,
+    height: 5,
+    width: "100%",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    overflow: "hidden",
+  },
+  medalsProgressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: Colors.primary,
   },
 
   statsRow: {
