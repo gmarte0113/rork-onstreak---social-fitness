@@ -1,16 +1,18 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   View,
   Dimensions,
+  Pressable,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "@/constants/colors";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { MedalImage } from "@/components/MedalImage";
+import { MedalViewerModal } from "@/components/MedalViewerModal";
 import { useApp } from "@/providers/AppProvider";
 import { MEDALS, type Medal } from "@/constants/medals";
 import { getProgram } from "@/constants/programs";
@@ -48,11 +50,19 @@ function streakLabel(threshold: number | undefined): string {
 export default function MedalsScreen() {
   const { state } = useApp();
   const insets = useSafeAreaInsets();
+  const [viewerMedal, setViewerMedal] = useState<Medal | null>(null);
 
   const earnedIds = useMemo(
     () => new Set(state.medals.map((m) => m.id)),
     [state.medals]
   );
+
+  const openViewer = useCallback((medal: Medal) => {
+    setViewerMedal(medal);
+  }, []);
+  const closeViewer = useCallback(() => {
+    setViewerMedal(null);
+  }, []);
 
   const sections = useMemo<Section[]>(() => {
     const streaks = MEDALS.filter((m) => m.kind === "streak");
@@ -141,6 +151,7 @@ export default function MedalsScreen() {
                     key={m.id}
                     medal={m}
                     earned={earnedIds.has(m.id)}
+                    onPress={openViewer}
                   />
                 ))}
               </View>
@@ -148,11 +159,38 @@ export default function MedalsScreen() {
           );
         })}
       </ScrollView>
+      <MedalViewerModal
+        visible={viewerMedal !== null}
+        onClose={closeViewer}
+        uri={viewerMedal?.image ?? ""}
+        title={
+          viewerMedal
+            ? viewerMedal.kind === "streak"
+              ? `${viewerMedal.threshold}-Day Streak`
+              : viewerMedal.title
+            : ""
+        }
+        subtitle={
+          viewerMedal
+            ? viewerMedal.kind === "streak"
+              ? streakSubtitle(viewerMedal.threshold)
+              : viewerMedal.subtitle
+            : ""
+        }
+      />
     </View>
   );
 }
 
-function MedalTile({ medal, earned }: { medal: Medal; earned: boolean }) {
+function MedalTile({
+  medal,
+  earned,
+  onPress,
+}: {
+  medal: Medal;
+  earned: boolean;
+  onPress: (medal: Medal) => void;
+}) {
   const isStreak = medal.kind === "streak";
   const displayTitle = isStreak
     ? `${medal.threshold}-Day Streak`
@@ -163,10 +201,19 @@ function MedalTile({ medal, earned }: { medal: Medal; earned: boolean }) {
     ? medal.subtitle
     : "Locked";
 
+  const handlePress = useCallback(() => {
+    if (earned) onPress(medal);
+  }, [earned, medal, onPress]);
+
   return (
-    <View style={styles.tile}>
-      <View style={styles.tileInner}>
-        <MedalImage uri={medal.image} size={MEDAL_SIZE} earned={earned} />
+    <Pressable
+      style={styles.tile}
+      onPress={handlePress}
+      disabled={!earned}
+      testID={`medal-tile-${medal.id}`}
+    >
+      <View style={styles.tileInner} pointerEvents="none">
+        <MedalImage uri={medal.image} size={MEDAL_SIZE} earned={earned} enableTilt={false} />
       </View>
       <Text
         style={[styles.tileTitle, !earned && styles.tileTitleLocked]}
@@ -180,7 +227,7 @@ function MedalTile({ medal, earned }: { medal: Medal; earned: boolean }) {
       >
         {sub}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
