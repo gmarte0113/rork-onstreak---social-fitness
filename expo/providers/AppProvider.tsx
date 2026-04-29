@@ -190,6 +190,7 @@ export type AppState = {
   hasSeenCreateGroupInfo: boolean;
   notificationsEnabled: boolean;
   lastNameChangeAt: string | null;
+  isDevMode: boolean;
 };
 
 function uid(): string {
@@ -237,6 +238,7 @@ const DEFAULT_STATE: AppState = {
   hasSeenCreateGroupInfo: false,
   notificationsEnabled: false,
   lastNameChangeAt: null,
+  isDevMode: false,
 };
 
 function daysBetween(a: string, b: string): number {
@@ -1116,6 +1118,59 @@ export const [AppProvider, useApp] = createContextHook(() => {
   const setPremium = useCallback(
     (value: boolean) => {
       persist((prev) => ({ ...prev, isPremium: value }));
+    },
+    [persist]
+  );
+
+  const setDevMode = useCallback(
+    (value: boolean) => {
+      if (!__DEV__) {
+        console.log("[AppProvider] setDevMode blocked: not __DEV__");
+        return;
+      }
+      persist((prev) => ({ ...prev, isDevMode: value }));
+    },
+    [persist]
+  );
+
+  const devSetStreak = useCallback(
+    (streak: number) => {
+      if (!__DEV__) return;
+      persist((prev) => {
+        if (!prev.isDevMode) return prev;
+        const safe = Math.max(0, Math.floor(streak));
+        let out: AppState = {
+          ...prev,
+          streak: safe,
+          longestStreak: Math.max(prev.longestStreak, safe),
+        };
+        if (safe > 0) {
+          out = checkStreakMedals(out, safe);
+        }
+        console.log("[dev] streak set to", safe);
+        return out;
+      });
+    },
+    [persist, checkStreakMedals]
+  );
+
+  const devToggleMedal = useCallback(
+    (medalId: MedalId) => {
+      if (!__DEV__) return;
+      persist((prev) => {
+        if (!prev.isDevMode) return prev;
+        const exists = prev.medals.some((m) => m.id === medalId);
+        if (exists) {
+          console.log("[dev] medal locked", medalId);
+          return { ...prev, medals: prev.medals.filter((m) => m.id !== medalId) };
+        }
+        const earned: EarnedMedal = {
+          id: medalId,
+          earnedAt: toDateKey(new Date()),
+        };
+        console.log("[dev] medal unlocked", medalId);
+        return { ...prev, medals: [...prev.medals, earned] };
+      });
     },
     [persist]
   );
@@ -2079,6 +2134,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
       resetAll,
       deleteAccount,
       setPremium,
+      setDevMode,
+      devSetStreak,
+      devToggleMedal,
       completeProgramDay,
       createGroup,
       joinGroup,
@@ -2135,6 +2193,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
       resetAll,
       deleteAccount,
       setPremium,
+      setDevMode,
+      devSetStreak,
+      devToggleMedal,
       completeProgramDay,
       createGroup,
       joinGroup,

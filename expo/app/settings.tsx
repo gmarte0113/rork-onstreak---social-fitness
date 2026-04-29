@@ -36,10 +36,14 @@ import {
   ExternalLink,
   FileText,
   Shield,
+  Wrench,
+  Flame,
+  Award,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { useApp } from "@/providers/AppProvider";
+import { MEDALS } from "@/constants/medals";
 import type { FitnessLevel, Goal } from "@/constants/workouts";
 import type { WeightUnit } from "@/providers/AppProvider";
 import {
@@ -77,7 +81,11 @@ export default function SettingsScreen() {
     updateDisplayName,
     resetAll,
     deleteAccount,
+    setDevMode,
+    devSetStreak,
+    devToggleMedal,
   } = useApp();
+  const [devMedalsOpen, setDevMedalsOpen] = useState<boolean>(false);
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [notif, setNotif] = useState<boolean>(state.notificationsEnabled);
@@ -360,6 +368,83 @@ export default function SettingsScreen() {
         <Text style={styles.dangerText}>Sign out & clear local data</Text>
       </TouchableOpacity>
 
+      {__DEV__ && (
+        <>
+          <Text style={styles.section}>DEVELOPER</Text>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.iconWrap}>
+                <Wrench color={Colors.primary} size={18} />
+              </View>
+              <Text style={styles.rowLabel}>Dev mode</Text>
+              <Switch
+                value={state.isDevMode}
+                onValueChange={setDevMode}
+                trackColor={{ false: Colors.border, true: Colors.primary }}
+                thumbColor={Platform.OS === "android" ? Colors.text : undefined}
+                testID="dev-mode-toggle"
+              />
+            </View>
+            {state.isDevMode && (
+              <>
+                <Divider />
+                <View style={[styles.row, { flexDirection: "column", alignItems: "flex-start", gap: 10 }]}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, alignSelf: "stretch" }}>
+                    <View style={styles.iconWrap}>
+                      <Flame color={Colors.primary} size={18} />
+                    </View>
+                    <Text style={styles.rowLabel}>Override streak</Text>
+                    <Text style={styles.rowValue}>{state.streak}</Text>
+                  </View>
+                  <View style={styles.devPresetRow}>
+                    {[0, 1, 7, 14, 30, 90].map((s) => (
+                      <TouchableOpacity
+                        key={s}
+                        style={[
+                          styles.devPresetBtn,
+                          state.streak === s && styles.devPresetBtnActive,
+                        ]}
+                        onPress={() => devSetStreak(s)}
+                        activeOpacity={0.85}
+                        testID={`dev-streak-${s}`}
+                      >
+                        <Text
+                          style={[
+                            styles.devPresetText,
+                            state.streak === s && styles.devPresetTextActive,
+                          ]}
+                        >
+                          {s}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                <Divider />
+                <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => setDevMedalsOpen(true)}
+                  activeOpacity={0.7}
+                  testID="dev-medals-btn"
+                >
+                  <View style={styles.iconWrap}>
+                    <Award color={Colors.primary} size={18} />
+                  </View>
+                  <Text style={styles.rowLabel}>Toggle medals</Text>
+                  <Text style={styles.rowValue}>
+                    {state.medals.length}/{MEDALS.length}
+                  </Text>
+                  <ChevronRight color={Colors.textDim} size={16} />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+          <Text style={styles.deleteHint}>
+            Dev tools are visible only in development builds. Production users are unaffected.
+          </Text>
+        </>
+      )}
+
       <Text style={styles.section}>ACCOUNT</Text>
       <TouchableOpacity
         style={[styles.dangerBtn, { borderColor: "rgba(239,68,68,0.4)" }]}
@@ -428,6 +513,12 @@ export default function SettingsScreen() {
           }
           router.replace("/onboarding");
         }}
+      />
+      <DevMedalsModal
+        visible={devMedalsOpen}
+        earnedIds={state.medals.map((m) => m.id)}
+        onClose={() => setDevMedalsOpen(false)}
+        onToggle={devToggleMedal}
       />
       <NameModal
         visible={nameOpen}
@@ -852,6 +943,80 @@ function SkipInfoModal({
   );
 }
 
+function DevMedalsModal({
+  visible,
+  earnedIds,
+  onClose,
+  onToggle,
+}: {
+  visible: boolean;
+  earnedIds: string[];
+  onClose: () => void;
+  onToggle: (id: string) => void;
+}) {
+  const earnedSet = useMemo(() => new Set(earnedIds), [earnedIds]);
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <Pressable style={styles.backdrop} onPress={onClose} />
+      <View style={[styles.sheet, { maxHeight: "85%" }]}>
+        <View style={styles.sheetHandle} />
+        <Text style={styles.sheetTitle}>Toggle medals</Text>
+        <ScrollView style={{ maxHeight: 480 }} contentContainerStyle={{ gap: 8 }}>
+          {MEDALS.map((m) => {
+            const earned = earnedSet.has(m.id);
+            return (
+              <TouchableOpacity
+                key={m.id}
+                style={[styles.devMedalRow, earned && styles.devMedalRowActive]}
+                onPress={() => onToggle(m.id)}
+                activeOpacity={0.85}
+                testID={`dev-medal-${m.id}`}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.devMedalTitle} numberOfLines={1}>
+                    {m.title}
+                  </Text>
+                  <Text style={styles.devMedalSub} numberOfLines={1}>
+                    {m.id}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.devMedalBadge,
+                    earned && styles.devMedalBadgeActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.devMedalBadgeText,
+                      earned && styles.devMedalBadgeTextActive,
+                    ]}
+                  >
+                    {earned ? "UNLOCKED" : "LOCKED"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <TouchableOpacity
+          style={[styles.saveBtn, { marginTop: 16 }]}
+          onPress={onClose}
+          activeOpacity={0.85}
+          testID="dev-medals-close"
+        >
+          <Text style={styles.saveBtnText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
 function SheetModal({
   visible,
   onClose,
@@ -1244,5 +1409,75 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 15,
     fontWeight: "800",
+  },
+  devPresetRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingLeft: 46,
+  },
+  devPresetBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  devPresetBtnActive: {
+    borderColor: Colors.primary,
+    backgroundColor: "rgba(255,107,53,0.18)",
+  },
+  devPresetText: {
+    color: Colors.textMuted,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  devPresetTextActive: {
+    color: Colors.primary,
+  },
+  devMedalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+  },
+  devMedalRowActive: {
+    borderColor: Colors.primary,
+    backgroundColor: "rgba(255,107,53,0.08)",
+  },
+  devMedalTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  devMedalSub: {
+    color: Colors.textDim,
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  devMedalBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: Colors.surfaceElevated,
+  },
+  devMedalBadgeActive: {
+    backgroundColor: "rgba(255,107,53,0.18)",
+  },
+  devMedalBadgeText: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  devMedalBadgeTextActive: {
+    color: Colors.primary,
   },
 });
