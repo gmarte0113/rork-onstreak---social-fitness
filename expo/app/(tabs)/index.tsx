@@ -215,55 +215,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {planActive && (
-          <TouchableOpacity
-            style={styles.planBanner}
-            activeOpacity={0.85}
-            onPress={() => router.push("/plan")}
-            testID="plan-banner"
-          >
-            <View style={styles.planIconWrap}>
-              <Target color={Colors.primary} size={18} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.planTitle}>
-                {personalizedPlanName} · Day {planDay}
-              </Text>
-              <Text style={styles.planSub}>
-                {plan?.completedDays.length ?? 0}/{PLAN_DURATION_DAYS} completed
-              </Text>
-            </View>
-            <ArrowRight color={Colors.textMuted} size={16} />
-          </TouchableOpacity>
-        )}
-
-        {programActive && program && (
-          <TouchableOpacity
-            style={styles.planBanner}
-            activeOpacity={0.85}
-            onPress={() =>
-              router.push({
-                pathname: "/program/[id]",
-                params: { id: program.id },
-              })
-            }
-            testID="program-banner"
-          >
-            <View style={[styles.planIconWrap, { backgroundColor: program.accentBg }]}>
-              <Trophy color={program.accent} size={18} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.planTitle}>
-                {program.title} · Day {programDay}
-              </Text>
-              <Text style={styles.planSub}>
-                {programProgress?.completedDays.length ?? 0}/{program.durationDays} completed
-              </Text>
-            </View>
-            <ArrowRight color={Colors.textMuted} size={16} />
-          </TouchableOpacity>
-        )}
-
         {hasEnrollment ? (
           <>
             <Text style={styles.sectionTitle}>{currentLabel}</Text>
@@ -286,6 +237,35 @@ export default function HomeScreen() {
                   <Text style={styles.timeText}>Under {displayDuration} min</Text>
                 </View>
               </View>
+
+              {(planActive || (programActive && program)) && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (planActive) {
+                      router.push("/plan");
+                    } else if (program) {
+                      router.push({
+                        pathname: "/program/[id]",
+                        params: { id: program.id },
+                      });
+                    }
+                  }}
+                  style={styles.planEnrolledRow}
+                  testID="enrolled-plan-link"
+                >
+                  {planActive ? (
+                    <Target color={Colors.primary} size={12} />
+                  ) : program ? (
+                    <Trophy color={program.accent} size={12} />
+                  ) : null}
+                  <Text style={styles.planEnrolledText} numberOfLines={1}>
+                    {planActive
+                      ? personalizedPlanName
+                      : program?.title ?? ""}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <Text style={styles.workoutTitle}>{displayTitle}</Text>
 
@@ -732,6 +712,19 @@ const styles = StyleSheet.create({
   },
   planTitle: { color: Colors.text, fontSize: 14, fontWeight: "800" },
   planSub: { color: Colors.textMuted, fontSize: 12, marginTop: 2 },
+  planEnrolledRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  planEnrolledText: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    flexShrink: 1,
+  },
   planCta: {
     marginTop: 20,
     padding: 16,
