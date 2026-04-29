@@ -35,6 +35,7 @@ import {
   Trash2,
   ExternalLink,
   FileText,
+  MessageSquare,
   Shield,
   Wrench,
   Flame,
@@ -327,6 +328,22 @@ export default function SettingsScreen() {
           </View>
         </>
       )}
+
+      <Text style={styles.section}>FEEDBACK</Text>
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => Linking.openURL("https://onstreak.userjot.com/").catch(() => {})}
+          activeOpacity={0.7}
+          testID="provide-feedback"
+        >
+          <View style={styles.iconWrap}>
+            <MessageSquare color={Colors.primary} size={18} />
+          </View>
+          <Text style={styles.rowLabel}>Provide feedback</Text>
+          <ExternalLink color={Colors.textDim} size={16} />
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.section}>LEGAL</Text>
       <View style={styles.card}>
