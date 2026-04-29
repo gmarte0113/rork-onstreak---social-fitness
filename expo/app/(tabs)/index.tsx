@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Animated,
+  Easing,
   ScrollView,
   StyleSheet,
   Text,
@@ -447,6 +449,14 @@ export default function HomeScreen() {
   );
 }
 
+type Ember = {
+  translateY: Animated.Value;
+  translateX: Animated.Value;
+  opacity: Animated.Value;
+  scale: Animated.Value;
+  startX: number;
+};
+
 function StreakCard({
   streak,
   completedToday,
@@ -456,6 +466,183 @@ function StreakCard({
   completedToday: boolean;
   completedDates: string[];
 }) {
+  const prevStreakRef = useRef<number | null>(null);
+  const [displayStreak, setDisplayStreak] = useState<number>(streak);
+  const [animatingFrom, setAnimatingFrom] = useState<number | null>(null);
+
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
+  const colorAnim = useRef(new Animated.Value(0)).current;
+  const oldNumTY = useRef(new Animated.Value(0)).current;
+  const oldNumOpacity = useRef(new Animated.Value(1)).current;
+  const newNumTY = useRef(new Animated.Value(28)).current;
+  const newNumOpacity = useRef(new Animated.Value(0)).current;
+
+  const embers = useRef<Ember[]>(
+    Array.from({ length: 8 }).map(() => ({
+      translateY: new Animated.Value(0),
+      translateX: new Animated.Value(0),
+      opacity: new Animated.Value(0),
+      scale: new Animated.Value(1),
+      startX: 0,
+    }))
+  ).current;
+
+  useEffect(() => {
+    const prev = prevStreakRef.current;
+    if (prev === null) {
+      prevStreakRef.current = streak;
+      setDisplayStreak(streak);
+      return;
+    }
+    if (streak > prev) {
+      console.log("[StreakCard] streak increased", prev, "->", streak);
+      setAnimatingFrom(prev);
+      setDisplayStreak(streak);
+
+      oldNumTY.setValue(0);
+      oldNumOpacity.setValue(1);
+      newNumTY.setValue(28);
+      newNumOpacity.setValue(0);
+      glowOpacity.setValue(0);
+      cardScale.setValue(1);
+      colorAnim.setValue(0);
+
+      Animated.sequence([
+        Animated.timing(glowOpacity, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.delay(60),
+      ]).start();
+
+      Animated.parallel([
+        Animated.timing(oldNumTY, {
+          toValue: -22,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(oldNumOpacity, {
+          toValue: 0,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(newNumTY, {
+          toValue: 0,
+          duration: 320,
+          delay: 60,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(newNumOpacity, {
+          toValue: 1,
+          duration: 240,
+          delay: 60,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      Animated.sequence([
+        Animated.delay(280),
+        Animated.spring(cardScale, {
+          toValue: 1.06,
+          friction: 5,
+          tension: 140,
+          useNativeDriver: true,
+        }),
+        Animated.spring(cardScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 120,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      Animated.sequence([
+        Animated.timing(colorAnim, {
+          toValue: 1,
+          duration: 280,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: false,
+        }),
+        Animated.delay(360),
+        Animated.timing(colorAnim, {
+          toValue: 0,
+          duration: 600,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: false,
+        }),
+      ]).start();
+
+      Animated.sequence([
+        Animated.delay(900),
+        Animated.timing(glowOpacity, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setAnimatingFrom(null);
+      });
+
+      embers.forEach((e, i) => {
+        const xJitter = (Math.random() - 0.5) * 120;
+        const startX = (Math.random() - 0.5) * 160;
+        e.startX = startX;
+        e.translateY.setValue(0);
+        e.translateX.setValue(0);
+        e.opacity.setValue(0);
+        e.scale.setValue(0.6 + Math.random() * 0.6);
+        Animated.sequence([
+          Animated.delay(180 + i * 60),
+          Animated.parallel([
+            Animated.timing(e.opacity, {
+              toValue: 0.7,
+              duration: 180,
+              useNativeDriver: true,
+            }),
+            Animated.timing(e.translateY, {
+              toValue: -90 - Math.random() * 40,
+              duration: 1100,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(e.translateX, {
+              toValue: xJitter,
+              duration: 1100,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.sequence([
+              Animated.delay(400),
+              Animated.timing(e.opacity, {
+                toValue: 0,
+                duration: 700,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+        ]).start();
+      });
+
+      prevStreakRef.current = streak;
+    } else if (streak !== prev) {
+      prevStreakRef.current = streak;
+      setDisplayStreak(streak);
+    }
+  }, [streak, glowOpacity, cardScale, colorAnim, oldNumTY, oldNumOpacity, newNumTY, newNumOpacity, embers]);
+
+  const numberColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#FFFFFF", Colors.primary],
+  });
+
   const week = useMemo(() => {
     const today = new Date();
     const dow = today.getDay();
@@ -482,6 +669,11 @@ function StreakCard({
   return (
     <View style={styles.streakGlowWrap} pointerEvents="box-none">
       <View style={styles.streakGlow} pointerEvents="none" />
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.streakAnimGlow, { opacity: glowOpacity }]}
+      />
+      <Animated.View style={{ transform: [{ scale: cardScale }] }}>
       <View style={styles.streakGlassWrap}>
         {Platform.OS !== "web" ? (
           <BlurView
@@ -513,9 +705,39 @@ function StreakCard({
         <View style={styles.streakContent}>
           <Text style={styles.streakTitle}>CURRENT STREAK</Text>
           <View style={styles.streakValueRow}>
-            <Text style={styles.streakBigNumber}>{streak}</Text>
+            <View style={styles.streakNumberWrap}>
+              <Animated.Text
+                style={[
+                  styles.streakBigNumber,
+                  {
+                    color: numberColor,
+                    transform: [{ translateY: newNumTY }],
+                    opacity: newNumOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [animatingFrom !== null ? 0 : 1, 1],
+                    }),
+                  },
+                ]}
+              >
+                {displayStreak}
+              </Animated.Text>
+              {animatingFrom !== null && (
+                <Animated.Text
+                  style={[
+                    styles.streakBigNumber,
+                    styles.streakOldNumber,
+                    {
+                      transform: [{ translateY: oldNumTY }],
+                      opacity: oldNumOpacity,
+                    },
+                  ]}
+                >
+                  {animatingFrom}
+                </Animated.Text>
+              )}
+            </View>
             <Text style={styles.streakDayText}>
-              {streak === 1 ? "day" : "days"}
+              {displayStreak === 1 ? "day" : "days"}
             </Text>
           </View>
           {completedToday ? (
@@ -561,6 +783,25 @@ function StreakCard({
             })}
           </View>
         </View>
+      </View>
+      </Animated.View>
+      <View pointerEvents="none" style={styles.embersLayer}>
+        {embers.map((e, i) => (
+          <Animated.View
+            key={`ember-${i}`}
+            style={[
+              styles.ember,
+              {
+                opacity: e.opacity,
+                transform: [
+                  { translateX: Animated.add(new Animated.Value(e.startX), e.translateX) },
+                  { translateY: e.translateY },
+                  { scale: e.scale },
+                ],
+              },
+            ]}
+          />
+        ))}
       </View>
     </View>
   );
@@ -611,6 +852,59 @@ const styles = StyleSheet.create({
   streakGlowWrap: {
     marginBottom: 24,
     position: "relative",
+  },
+  streakAnimGlow: {
+    position: "absolute",
+    left: -6,
+    right: -6,
+    top: -6,
+    bottom: -6,
+    borderRadius: 30,
+    backgroundColor: "rgba(255,107,53,0.22)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#FF6B35",
+        shadowOpacity: 0.7,
+        shadowRadius: 30,
+        shadowOffset: { width: 0, height: 0 },
+      },
+      default: {},
+    }),
+  },
+  streakNumberWrap: {
+    position: "relative",
+    minWidth: 40,
+  },
+  streakOldNumber: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    color: "#FFFFFF",
+  },
+  embersLayer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: "40%",
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  ember: {
+    position: "absolute",
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#FFB46B",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#FF6B35",
+        shadowOpacity: 0.9,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 0 },
+      },
+      default: {},
+    }),
   },
   streakGlow: {
     position: "absolute",
