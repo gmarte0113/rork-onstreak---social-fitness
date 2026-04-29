@@ -63,7 +63,7 @@ export default function SocialScreen() {
 
   const individualQuery = useQuery({
     queryKey: ["leaderboard", "individuals"],
-    queryFn: () => fetchGlobalIndividualLeaderboard(50),
+    queryFn: () => fetchGlobalIndividualLeaderboard(100),
     staleTime: LEADERBOARD_TTL_MS,
     refetchInterval: LEADERBOARD_TTL_MS,
     refetchOnWindowFocus: false,
@@ -71,7 +71,7 @@ export default function SocialScreen() {
 
   const groupQuery = useQuery({
     queryKey: ["leaderboard", "groups"],
-    queryFn: () => fetchGlobalGroupLeaderboard(50),
+    queryFn: () => fetchGlobalGroupLeaderboard(100),
     staleTime: LEADERBOARD_TTL_MS,
     refetchInterval: LEADERBOARD_TTL_MS,
     refetchOnWindowFocus: false,
@@ -546,40 +546,56 @@ export default function SocialScreen() {
             <Text style={styles.rankPillHint}>of {globalIndividuals.length}</Text>
           </View>
         )}
-        <View style={styles.card}>
-          {globalIndividuals.length <= 1 && (
+        <View style={styles.leaderCard}>
+          {globalIndividuals.length <= 1 ? (
             <View style={styles.leaderEmpty}>
               <Text style={styles.leaderEmptyText}>
                 The leaderboard is just getting started. Keep stacking streaks to climb as more people join.
               </Text>
             </View>
-          )}
-          {globalIndividuals.slice(0, 20).map((u, idx) => (
-            <View
-              key={u.id}
-              style={[
-                styles.leaderRow,
-                idx < Math.min(globalIndividuals.length, 20) - 1 && styles.rowBorder,
-                u.isSelf && styles.leaderSelf,
-              ]}
-            >
-              <Text style={[styles.leaderRank, idx < 3 && { color: Colors.accent }]}>
-                {idx + 1}
-              </Text>
-              <Text style={[styles.leaderName, u.isSelf && { color: Colors.primary }]}>
-                {u.name}
-                {u.isSelf ? " (you)" : ""}
-              </Text>
-              <View style={styles.leaderStat}>
-                <Flame color={Colors.primary} size={12} fill={Colors.primary} />
-                <Text style={styles.leaderStatText}>{u.streak}</Text>
-              </View>
-              <View style={styles.leaderStat}>
-                <MedalIcon color={Colors.accent} size={12} />
-                <Text style={styles.leaderStatText}>{u.total}</Text>
-              </View>
+          ) : (
+            <View style={styles.leaderScrollWrap}>
+              <ScrollView
+                style={styles.leaderScroll}
+                contentContainerStyle={styles.leaderScrollContent}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+                testID="individual-leaderboard-scroll"
+              >
+                {globalIndividuals.slice(0, 100).map((u, idx, arr) => (
+                  <View
+                    key={u.id}
+                    style={[
+                      styles.leaderRow,
+                      idx < arr.length - 1 && styles.rowBorder,
+                      u.isSelf && styles.leaderSelf,
+                    ]}
+                  >
+                    <Text style={[styles.leaderRank, idx < 3 && { color: Colors.accent }]}>
+                      {idx + 1}
+                    </Text>
+                    <Text style={[styles.leaderName, u.isSelf && { color: Colors.primary }]}>
+                      {u.name}
+                      {u.isSelf ? " (you)" : ""}
+                    </Text>
+                    <View style={styles.leaderStat}>
+                      <Flame color={Colors.primary} size={12} fill={Colors.primary} />
+                      <Text style={styles.leaderStatText}>{u.streak}</Text>
+                    </View>
+                    <View style={styles.leaderStat}>
+                      <MedalIcon color={Colors.accent} size={12} />
+                      <Text style={styles.leaderStatText}>{u.total}</Text>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+              <LinearGradient
+                pointerEvents="none"
+                colors={["rgba(0,0,0,0)", Colors.surface]}
+                style={styles.leaderFade}
+              />
             </View>
-          ))}
+          )}
         </View>
 
         <View style={styles.sectionRow}>
@@ -593,37 +609,53 @@ export default function SocialScreen() {
             <Text style={styles.rankPillHint}>of {globalGroups.length}</Text>
           </View>
         )}
-        <View style={styles.card}>
-          {globalGroups.length === 0 && (
+        <View style={styles.leaderCard}>
+          {globalGroups.length === 0 ? (
             <View style={styles.leaderEmpty}>
               <Text style={styles.leaderEmptyText}>
                 No groups on the board yet. Create or join one to start competing.
               </Text>
             </View>
-          )}
-          {globalGroups.slice(0, 20).map((g, idx) => (
-            <View
-              key={g.id}
-              style={[
-                styles.leaderRow,
-                idx < Math.min(globalGroups.length, 20) - 1 && styles.rowBorder,
-                g.isMine && styles.leaderSelf,
-              ]}
-            >
-              <Text style={[styles.leaderRank, idx < 3 && { color: Colors.accent }]}>
-                {idx + 1}
-              </Text>
-              <Text style={styles.groupIconSmall}>{g.icon}</Text>
-              <Text style={[styles.leaderName, g.isMine && { color: Colors.primary }]}>
-                {g.name}
-                {g.isMine ? " (yours)" : ""}
-              </Text>
-              <View style={styles.leaderStat}>
-                <Trophy color={Colors.accent} size={12} />
-                <Text style={styles.leaderStatText}>{g.score}</Text>
-              </View>
+          ) : (
+            <View style={styles.leaderScrollWrap}>
+              <ScrollView
+                style={styles.leaderScroll}
+                contentContainerStyle={styles.leaderScrollContent}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+                testID="group-leaderboard-scroll"
+              >
+                {globalGroups.slice(0, 100).map((g, idx, arr) => (
+                  <View
+                    key={g.id}
+                    style={[
+                      styles.leaderRow,
+                      idx < arr.length - 1 && styles.rowBorder,
+                      g.isMine && styles.leaderSelf,
+                    ]}
+                  >
+                    <Text style={[styles.leaderRank, idx < 3 && { color: Colors.accent }]}>
+                      {idx + 1}
+                    </Text>
+                    <Text style={styles.groupIconSmall}>{g.icon}</Text>
+                    <Text style={[styles.leaderName, g.isMine && { color: Colors.primary }]}>
+                      {g.name}
+                      {g.isMine ? " (yours)" : ""}
+                    </Text>
+                    <View style={styles.leaderStat}>
+                      <Trophy color={Colors.accent} size={12} />
+                      <Text style={styles.leaderStatText}>{g.score}</Text>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+              <LinearGradient
+                pointerEvents="none"
+                colors={["rgba(0,0,0,0)", Colors.surface]}
+                style={styles.leaderFade}
+              />
             </View>
-          ))}
+          )}
         </View>
 
         {myGroup && (
@@ -1046,6 +1078,30 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 14,
     marginBottom: 20,
+  },
+  leaderCard: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  leaderScrollWrap: {
+    position: "relative",
+  },
+  leaderScroll: {
+    maxHeight: 460,
+  },
+  leaderScrollContent: {
+    paddingHorizontal: 14,
+  },
+  leaderFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 28,
   },
   leaderRow: {
     flexDirection: "row",
