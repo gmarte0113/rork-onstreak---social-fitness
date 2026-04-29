@@ -1,9 +1,10 @@
 import { Tabs, Redirect } from "expo-router";
 import React from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
 import FloatingTabBar from "@/components/FloatingTabBar";
+import AppBackground from "@/components/AppBackground";
 
 export default function TabLayout() {
   const { state, hydrated } = useApp();
@@ -12,11 +13,13 @@ export default function TabLayout() {
   if (!state.onboarded) return <Redirect href="/onboarding" />;
 
   return (
-    <Tabs
+    <View style={styles.root}>
+      <AppBackground />
+      <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: Colors.bg },
+        sceneStyle: { backgroundColor: "transparent" },
         animation: "shift",
         transitionSpec: {
           animation: "timing",
@@ -31,5 +34,10 @@ export default function TabLayout() {
       <Tabs.Screen name="social" options={{ title: "Groups" }} />
       <Tabs.Screen name="premium" options={{ title: "Programs" }} />
     </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.bg },
+});
