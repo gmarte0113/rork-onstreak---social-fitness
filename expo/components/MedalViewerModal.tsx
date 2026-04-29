@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
   Modal,
-  PanResponder,
   Platform,
   Pressable,
   StyleSheet,
@@ -25,10 +24,6 @@ type Props = {
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const MEDAL_SIZE = Math.min(SCREEN_W * 0.78, SCREEN_H * 0.5);
-const WRAP_PADDING = 60;
-const WRAP_SIZE = MEDAL_SIZE + WRAP_PADDING * 2;
-const MAX_TILT = 18;
-const MAX_TRANSLATE = 12;
 
 export const MedalViewerModal = React.memo(function MedalViewerModal({
   visible,
@@ -37,10 +32,6 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
   title,
   subtitle,
 }: Props) {
-  const tiltX = useRef(new Animated.Value(0)).current;
-  const tiltY = useRef(new Animated.Value(0)).current;
-  const transX = useRef(new Animated.Value(0)).current;
-  const transY = useRef(new Animated.Value(0)).current;
   const enter = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -52,74 +43,13 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
         tension: 70,
         useNativeDriver: true,
       }).start();
-    } else {
-      tiltX.setValue(0);
-      tiltY.setValue(0);
-      transX.setValue(0);
-      transY.setValue(0);
     }
-  }, [visible, enter, tiltX, tiltY, transX, transY]);
-
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderMove: (_e, g) => {
-          const half = MEDAL_SIZE / 2;
-          const dx = Math.max(-half, Math.min(half, g.dx));
-          const dy = Math.max(-half, Math.min(half, g.dy));
-          tiltY.setValue((dx / half) * MAX_TILT);
-          tiltX.setValue(-(dy / half) * MAX_TILT);
-          transX.setValue((dx / half) * MAX_TRANSLATE);
-          transY.setValue((dy / half) * MAX_TRANSLATE);
-        },
-        onPanResponderRelease: () => {
-          Animated.parallel([
-            Animated.spring(tiltX, { toValue: 0, friction: 6, tension: 60, useNativeDriver: true }),
-            Animated.spring(tiltY, { toValue: 0, friction: 6, tension: 60, useNativeDriver: true }),
-            Animated.spring(transX, { toValue: 0, friction: 6, tension: 60, useNativeDriver: true }),
-            Animated.spring(transY, { toValue: 0, friction: 6, tension: 60, useNativeDriver: true }),
-          ]).start();
-        },
-        onPanResponderTerminate: () => {
-          Animated.parallel([
-            Animated.spring(tiltX, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(tiltY, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(transX, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(transY, { toValue: 0, useNativeDriver: true }),
-          ]).start();
-        },
-      }),
-    [tiltX, tiltY, transX, transY]
-  );
-
-  const rotateX = tiltX.interpolate({
-    inputRange: [-MAX_TILT, MAX_TILT],
-    outputRange: [`${-MAX_TILT}deg`, `${MAX_TILT}deg`],
-  });
-  const rotateY = tiltY.interpolate({
-    inputRange: [-MAX_TILT, MAX_TILT],
-    outputRange: [`${-MAX_TILT}deg`, `${MAX_TILT}deg`],
-  });
+  }, [visible, enter]);
 
   const enterScale = enter.interpolate({
     inputRange: [0, 1],
     outputRange: [0.85, 1],
   });
-  const enterOpacity = enter;
-
-  const transform =
-    Platform.OS === "web"
-      ? [{ translateX: transX }, { translateY: transY }, { scale: enterScale }]
-      : [
-          { perspective: 900 },
-          { translateX: transX },
-          { translateY: transY },
-          { rotateX },
-          { rotateY },
-          { scale: enterScale },
-        ];
 
   return (
     <Modal
@@ -148,14 +78,11 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
 
         <View style={styles.content} pointerEvents="box-none">
           <Animated.View
-            {...pan.panHandlers}
             style={[
               styles.medalWrap,
               {
-                width: WRAP_SIZE,
-                height: WRAP_SIZE,
-                opacity: enterOpacity,
-                transform,
+                opacity: enter,
+                transform: [{ scale: enterScale }],
               },
             ]}
           >
@@ -167,7 +94,7 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
             />
           </Animated.View>
 
-          <Animated.View style={{ opacity: enterOpacity, alignItems: "center" }}>
+          <Animated.View style={{ opacity: enter, alignItems: "center" }}>
             <Text style={styles.title} numberOfLines={2}>
               {title}
             </Text>
@@ -176,7 +103,6 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
                 {subtitle}
               </Text>
             ) : null}
-            <Text style={styles.hint}>Swipe to tilt</Text>
           </Animated.View>
         </View>
       </Pressable>
@@ -215,14 +141,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
-    overflow: "visible",
   },
   medalWrap: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 0,
+    marginBottom: 16,
     backgroundColor: "transparent",
-    overflow: "visible",
   },
   title: {
     color: Colors.text,
@@ -237,12 +161,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 6,
     textAlign: "center",
-  },
-  hint: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 18,
-    letterSpacing: 0.5,
   },
 });
