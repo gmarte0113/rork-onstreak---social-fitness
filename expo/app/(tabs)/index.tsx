@@ -9,10 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import {
-  Flame,
   Clock,
   Check,
   Settings,
@@ -189,31 +189,11 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.streakCard}>
-          <View style={styles.streakRow}>
-            <View style={styles.flameCircle}>
-              <Flame color={Colors.primary} size={26} fill={Colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.streakLabel}>Current streak</Text>
-              <Text style={styles.streakValue}>
-                Day {state.streak}{state.streak > 0 ? <Text style={styles.streakEmoji}> 🔥</Text> : null}
-              </Text>
-            </View>
-            <View style={styles.badgeCompleted}>
-              {completedToday ? (
-                <>
-                  <Check color={Colors.success} size={14} />
-                  <Text style={styles.badgeText}>Done today</Text>
-                </>
-              ) : (
-                <Text style={[styles.badgeText, { color: Colors.textMuted }]}>
-                  Not yet
-                </Text>
-              )}
-            </View>
-          </View>
-        </View>
+        <StreakCard
+          streak={state.streak}
+          completedToday={completedToday}
+          completedDates={state.completedDates}
+        />
 
         {hasEnrollment ? (
           <>
@@ -467,6 +447,125 @@ export default function HomeScreen() {
   );
 }
 
+function StreakCard({
+  streak,
+  completedToday,
+  completedDates,
+}: {
+  streak: number;
+  completedToday: boolean;
+  completedDates: string[];
+}) {
+  const week = useMemo(() => {
+    const today = new Date();
+    const dow = today.getDay();
+    const offsetToMonday = dow === 0 ? -6 : 1 - dow;
+    const monday = new Date(today);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(today.getDate() + offsetToMonday);
+    const labels = ["M", "T", "W", "T", "F", "S", "S"] as const;
+    const todayKey = today.toISOString().slice(0, 10);
+    const completedSet = new Set<string>(completedDates);
+    return labels.map((label, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      return {
+        label,
+        key,
+        isToday: key === todayKey,
+        completed: completedSet.has(key),
+      };
+    });
+  }, [completedDates]);
+
+  return (
+    <View style={styles.streakGlowWrap} pointerEvents="box-none">
+      <View style={styles.streakGlow} pointerEvents="none" />
+      <View style={styles.streakGlassWrap}>
+        {Platform.OS !== "web" ? (
+          <BlurView
+            intensity={30}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+        ) : (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: "rgba(20,16,14,0.55)" },
+            ]}
+          />
+        )}
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: "rgba(15,12,10,0.45)" },
+          ]}
+        />
+        <LinearGradient
+          colors={["rgba(255,255,255,0.10)", "rgba(255,255,255,0)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.streakGlassHighlight}
+          pointerEvents="none"
+        />
+        <View style={styles.streakContent}>
+          <Text style={styles.streakTitle}>CURRENT STREAK</Text>
+          <View style={styles.streakValueRow}>
+            <Text style={styles.streakBigNumber}>{streak}</Text>
+            <Text style={styles.streakDayText}>
+              {streak === 1 ? "day" : "days"}
+            </Text>
+          </View>
+          {completedToday ? (
+            <View style={styles.donePill}>
+              <Check color={Colors.success} size={14} strokeWidth={3} />
+              <Text style={styles.donePillText}>Done today</Text>
+            </View>
+          ) : (
+            <View style={[styles.donePill, styles.donePillMuted]}>
+              <Text
+                style={[
+                  styles.donePillText,
+                  { color: Colors.textMuted },
+                ]}
+              >
+                Not yet today
+              </Text>
+            </View>
+          )}
+          <View style={styles.weekRow}>
+            {week.map((d, i) => {
+              const isActive = d.isToday;
+              const isCompleted = d.completed;
+              return (
+                <View key={`${d.key}-${i}`} style={styles.weekCol}>
+                  <View
+                    style={[
+                      styles.weekBar,
+                      isCompleted && styles.weekBarCompleted,
+                      isActive && styles.weekBarActive,
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.weekLabel,
+                      isActive && styles.weekLabelActive,
+                    ]}
+                  >
+                    {d.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function ExerciseRow({ name, reps }: { name: string; reps: string }) {
   const [open, setOpen] = useState<boolean>(false);
   const description = getExerciseDescription(name);
@@ -509,36 +608,133 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  streakCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  streakGlowWrap: {
     marginBottom: 24,
+    position: "relative",
   },
-  streakRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  flameCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "rgba(255,107,53,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
+  streakGlow: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    top: 8,
+    bottom: 0,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,107,53,0.18)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#FF6B35",
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 6 },
+      },
+      android: { elevation: 0 },
+      default: {},
+    }),
   },
-  streakLabel: { color: Colors.textMuted, fontSize: 12, fontWeight: "500" },
-  streakValue: { color: Colors.text, fontSize: 22, fontWeight: "800", marginTop: 2 },
-  streakEmoji: { fontSize: 18 },
-  badgeCompleted: {
+  streakGlassWrap: {
+    borderRadius: 22,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,178,138,0.25)",
+  },
+  streakGlassHighlight: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: "55%",
+  },
+  streakContent: {
+    padding: 20,
+  },
+  streakTitle: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.6,
+    marginBottom: 8,
+  },
+  streakValueRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+    marginBottom: 14,
+  },
+  streakBigNumber: {
+    color: "#fff",
+    fontSize: 56,
+    fontWeight: "800",
+    letterSpacing: -2,
+    lineHeight: 58,
+  },
+  streakDayText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  donePill: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.surfaceElevated,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 999,
+    backgroundColor: "rgba(46, 204, 113, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(46, 204, 113, 0.35)",
+    marginBottom: 18,
   },
-  badgeText: { color: Colors.success, fontSize: 11, fontWeight: "700" },
+  donePillMuted: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  donePillText: {
+    color: Colors.success,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  weekRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  weekCol: {
+    flex: 1,
+    alignItems: "center",
+    gap: 8,
+  },
+  weekBar: {
+    height: 5,
+    width: "100%",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+  },
+  weekBarCompleted: {
+    backgroundColor: "rgba(255,107,53,0.45)",
+  },
+  weekBarActive: {
+    backgroundColor: Colors.primary,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#FF6B35",
+        shadowOpacity: 0.7,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 0 },
+      },
+      default: {},
+    }),
+  },
+  weekLabel: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  weekLabelActive: {
+    color: "#fff",
+  },
   progressMeta: {
     flexDirection: "row",
     justifyContent: "space-between",
