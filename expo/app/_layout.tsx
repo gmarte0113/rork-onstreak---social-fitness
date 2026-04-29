@@ -40,7 +40,7 @@ function RootLayoutNav() {
         headerStyle: { backgroundColor: Colors.bg },
         headerTitleStyle: { color: Colors.text, fontWeight: "700" },
         headerTintColor: Colors.text,
-        headerLeft: ({ canGoBack }) => (canGoBack ? <HeaderBackButton /> : null),
+        headerLeft: ({ canGoBack }) => (canGoBack ? <HeaderBackButton canGoBack={canGoBack} /> : null),
         contentStyle: { backgroundColor: Colors.bg },
         animation: "fade",
         animationDuration: 280,

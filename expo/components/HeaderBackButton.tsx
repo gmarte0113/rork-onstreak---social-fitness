@@ -4,11 +4,11 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 
-export function HeaderBackButton() {
+export function HeaderBackButton({ canGoBack }: { canGoBack?: boolean }) {
   const router = useRouter();
 
   const handlePress = () => {
-    if (router.canGoBack()) {
+    if (canGoBack) {
       router.back();
     }
   };
