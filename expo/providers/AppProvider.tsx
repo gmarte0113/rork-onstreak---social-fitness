@@ -280,7 +280,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (!raw) return DEFAULT_STATE;
         const parsed = JSON.parse(raw) as Partial<AppState>;
-        return { ...DEFAULT_STATE, ...parsed };
+        const merged: AppState = { ...DEFAULT_STATE, ...parsed };
+        if (!__DEV__ && merged.isDevMode) {
+          console.log("[AppProvider] forcing isDevMode=false in production");
+          merged.isDevMode = false;
+        }
+        return merged;
       } catch (e) {
         console.log("[AppProvider] load error", e);
         return DEFAULT_STATE;
