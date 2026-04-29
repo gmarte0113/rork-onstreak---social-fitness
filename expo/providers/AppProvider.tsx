@@ -55,6 +55,9 @@ import {
   computeAndUpdateGroupStreakRemote,
   insertGroupPhotoRemote,
   fetchGroupPhotosRemote,
+  fetchGroupMessagesRemote,
+  insertGroupMessageRemote,
+  subscribeToGroupMessages,
 } from "@/lib/groups";
 import { MAX_GROUP_MEMBERS } from "@/constants/groupIcons";
 import { identifyUser, track } from "@/utils/analytics";
@@ -455,6 +458,27 @@ export const [AppProvider, useApp] = createContextHook(() => {
           }
           const groupIds = stateRef.current.groups.map((g) => g.id);
           if (groupIds.length > 0) {
+            const remoteMessages = await fetchGroupMessagesRemote(groupIds);
+            if (remoteMessages.length > 0) {
+              setState((prev) => {
+                const map = new Map<string, GroupMessage>();
+                for (const m of prev.messages) map.set(m.id, m);
+                for (const r of remoteMessages) {
+                  map.set(r.id, {
+                    id: r.id,
+                    groupId: r.groupId,
+                    authorId: r.authorId,
+                    authorName: r.authorName,
+                    text: r.text,
+                    createdAt: r.createdAt,
+                  });
+                }
+                const next = { ...prev, messages: Array.from(map.values()) };
+                stateRef.current = next;
+                AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+                return next;
+              });
+            }
             const remotePhotos = await fetchGroupPhotosRemote(groupIds);
             if (remotePhotos.length > 0) {
               setState((prev) => {
@@ -484,6 +508,49 @@ export const [AppProvider, useApp] = createContextHook(() => {
       })();
     }
   }, [supabaseUserId, hydrated, hydrateFromSupabase]);
+
+  const groupIdsKey = useMemo(
+    () => state.groups.map((g) => g.id).sort().join(","),
+    [state.groups]
+  );
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabaseUserId) return;
+    const ids = groupIdsKey ? groupIdsKey.split(",").filter(Boolean) : [];
+    if (ids.length === 0) return;
+    const unsubscribe = subscribeToGroupMessages(ids, (incoming) => {
+      setState((prev) => {
+        if (prev.messages.some((m) => m.id === incoming.id)) return prev;
+        const filtered = prev.messages.filter(
+          (m) =>
+            !(
+              m.id.startsWith("local-") &&
+              m.authorId === incoming.authorId &&
+              m.groupId === incoming.groupId &&
+              m.text === incoming.text
+            )
+        );
+        const next: AppState = {
+          ...prev,
+          messages: [
+            ...filtered,
+            {
+              id: incoming.id,
+              groupId: incoming.groupId,
+              authorId: incoming.authorId,
+              authorName: incoming.authorName,
+              text: incoming.text,
+              createdAt: incoming.createdAt,
+            },
+          ],
+        };
+        stateRef.current = next;
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+        return next;
+      });
+    });
+    return unsubscribe;
+  }, [groupIdsKey, supabaseUserId]);
 
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncToSupabase = useCallback((s: AppState) => {
@@ -1544,20 +1611,51 @@ export const [AppProvider, useApp] = createContextHook(() => {
     (groupId: string, text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
+      const tempId = `local-${uid()}`;
+      const authorId = stateRef.current.userId;
+      const authorName = stateRef.current.userName || "Member";
       persist((prev) => ({
         ...prev,
         messages: [
           ...prev.messages,
           {
-            id: uid(),
+            id: tempId,
             groupId,
-            authorId: prev.userId,
-            authorName: prev.userName,
+            authorId,
+            authorName,
             text: trimmed,
             createdAt: Date.now(),
           },
         ],
       }));
+      (async () => {
+        const remote = await insertGroupMessageRemote({
+          groupId,
+          userId: authorId,
+          userName: authorName,
+          text: trimmed,
+        });
+        if (!remote) return;
+        persist((prev) => {
+          const exists = prev.messages.some((m) => m.id === remote.id);
+          const filtered = prev.messages.filter((m) => m.id !== tempId);
+          if (exists) return { ...prev, messages: filtered };
+          return {
+            ...prev,
+            messages: [
+              ...filtered,
+              {
+                id: remote.id,
+                groupId: remote.groupId,
+                authorId: remote.authorId,
+                authorName: remote.authorName,
+                text: remote.text,
+                createdAt: remote.createdAt,
+              },
+            ],
+          };
+        });
+      })();
     },
     [persist]
   );

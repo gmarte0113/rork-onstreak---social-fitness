@@ -23,6 +23,129 @@ export const GROUPS_TABLE = "groups";
 export const GROUP_MEMBERS_TABLE = "group_members";
 export const GROUP_PHOTOS_TABLE = "group_workout_photos";
 export const GROUP_PHOTOS_BUCKET = "group-photos";
+export const GROUP_MESSAGES_TABLE = "group_messages";
+
+type GroupMessageRow = {
+  id: string;
+  group_id: string;
+  user_id: string;
+  user_name: string | null;
+  text: string;
+  created_at: string;
+};
+
+export type RemoteGroupMessage = {
+  id: string;
+  groupId: string;
+  authorId: string;
+  authorName: string;
+  text: string;
+  createdAt: number;
+};
+
+function rowToMessage(row: GroupMessageRow): RemoteGroupMessage {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    authorId: row.user_id,
+    authorName: row.user_name ?? "Member",
+    text: row.text,
+    createdAt: new Date(row.created_at).getTime(),
+  };
+}
+
+export async function fetchGroupMessagesRemote(
+  groupIds: string[],
+  limitPerGroup: number = 200
+): Promise<RemoteGroupMessage[]> {
+  if (!isSupabaseConfigured || groupIds.length === 0) return [];
+  try {
+    const { data, error } = await supabase
+      .from(GROUP_MESSAGES_TABLE)
+      .select("*")
+      .in("group_id", groupIds)
+      .order("created_at", { ascending: false })
+      .limit(limitPerGroup * Math.max(1, groupIds.length));
+    if (error) {
+      console.log("[groups] fetchGroupMessagesRemote error", error.message);
+      return [];
+    }
+    return ((data ?? []) as GroupMessageRow[]).map(rowToMessage);
+  } catch (e) {
+    console.log("[groups] fetchGroupMessagesRemote exception", e);
+    return [];
+  }
+}
+
+export async function insertGroupMessageRemote(params: {
+  groupId: string;
+  userId: string;
+  userName: string;
+  text: string;
+}): Promise<RemoteGroupMessage | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from(GROUP_MESSAGES_TABLE)
+      .insert({
+        group_id: params.groupId,
+        user_id: params.userId,
+        user_name: params.userName,
+        text: params.text,
+      })
+      .select()
+      .single();
+    if (error) {
+      console.log("[groups] insertGroupMessageRemote error", error.message);
+      return null;
+    }
+    return rowToMessage(data as GroupMessageRow);
+  } catch (e) {
+    console.log("[groups] insertGroupMessageRemote exception", e);
+    return null;
+  }
+}
+
+export function subscribeToGroupMessages(
+  groupIds: string[],
+  onInsert: (msg: RemoteGroupMessage) => void
+): () => void {
+  if (!isSupabaseConfigured || groupIds.length === 0) return () => {};
+  try {
+    const channel = supabase
+      .channel(`group-messages-${groupIds.join("-").slice(0, 80)}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: GROUP_MESSAGES_TABLE,
+          filter: `group_id=in.(${groupIds.join(",")})`,
+        },
+        (payload: { new: GroupMessageRow }) => {
+          try {
+            onInsert(rowToMessage(payload.new));
+          } catch (e) {
+            console.log("[groups] subscribeToGroupMessages handler error", e);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log("[groups] messages channel status", status);
+      });
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {
+        console.log("[groups] removeChannel error", e);
+      }
+    };
+  } catch (e) {
+    console.log("[groups] subscribeToGroupMessages exception", e);
+    return () => {};
+  }
+}
+
 
 type GroupRow = {
   id: string;
