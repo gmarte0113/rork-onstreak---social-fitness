@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,6 +10,8 @@ import {
   Alert,
   Modal,
   Pressable,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -398,39 +400,20 @@ export default function ProgressScreen() {
             <View style={styles.photosBadge}>
               <Text style={styles.photosBadgeText}>PHOTOS · {photoCount}</Text>
             </View>
-            {nextEmptySlot && (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => pickImage(nextEmptySlot)}
-                style={styles.addPhotoBtn}
-                testID="add-photo"
-              >
-                <Plus color="#A78BFA" size={16} />
-                <Text style={styles.addPhotoText}>Add</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           <Text style={styles.photosTitle}>Progress photos</Text>
           <Text style={styles.photosSub}>Compare side-by-side · weekly</Text>
 
-          <View style={styles.photosGrid}>
-            {filledPhotos.map((p, i) => (
-              <PhotoTile
-                key={p.slot}
-                uri={p.uri}
-                date={p.date}
-                isLatest={i === filledPhotos.length - 1}
-                onPick={() => setViewing({ slot: p.slot, uri: p.uri, date: p.date })}
-              />
-            ))}
-            {nextEmptySlot && (
-              <PhotoTile
-                key={`empty-${nextEmptySlot}`}
-                onPick={() => pickImage(nextEmptySlot)}
-              />
-            )}
-          </View>
+          <PhotoTimeline
+            photos={filledPhotos.map((p) => ({
+              ...p,
+              weight: weightForDate(state.weights, p.date, toDisplay, unit),
+            }))}
+            canAdd={!!nextEmptySlot}
+            onAdd={() => nextEmptySlot && pickImage(nextEmptySlot)}
+            onOpen={(p) => setViewing({ slot: p.slot, uri: p.uri, date: p.date })}
+          />
         </View>
       </ScrollView>
 
@@ -533,6 +516,168 @@ function WeightChart({ weights, latestVal }: { weights: number[]; latestVal: num
         </View>
       )}
     </View>
+  );
+}
+
+function weightForDate(
+  weights: { date?: string; weightKg: number }[],
+  date: string | undefined,
+  toDisplay: (kg: number) => number,
+  unit: string,
+): string | undefined {
+  if (!date) return undefined;
+  const match = weights.find((w) => w.date === date);
+  if (!match) return undefined;
+  return `${toDisplay(match.weightKg)} ${unit.toUpperCase()}`;
+}
+
+function formatPhotoDate(date?: string): string {
+  if (!date) return "";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+type TimelinePhoto = {
+  slot: "before" | "after";
+  uri: string;
+  date?: string;
+  weight?: string;
+};
+
+const SCREEN_W = Dimensions.get("window").width;
+const CARD_W = Math.min(280, SCREEN_W - 100);
+const CARD_GAP = 14;
+const SNAP_INTERVAL = CARD_W + CARD_GAP;
+
+function PhotoTimeline({
+  photos,
+  canAdd,
+  onAdd,
+  onOpen,
+}: {
+  photos: TimelinePhoto[];
+  canAdd: boolean;
+  onAdd: () => void;
+  onOpen: (p: TimelinePhoto) => void;
+}) {
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  if (photos.length === 0) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onAdd}
+        style={styles.emptyTimeline}
+        testID="photo-add-first"
+      >
+        <View style={styles.emptyTimelineIcon}>
+          <Plus color={Colors.primary} size={28} />
+        </View>
+        <Text style={styles.emptyTimelineTitle}>Add your first progress photo</Text>
+        <Text style={styles.emptyTimelineSub}>Track your transformation over time</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  const items: (TimelinePhoto | { add: true })[] = [...photos];
+  if (canAdd) items.push({ add: true });
+
+  const sidePadding = (SCREEN_W - CARD_W) / 2 - 36;
+
+  return (
+    <Animated.ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      decelerationRate="fast"
+      snapToInterval={SNAP_INTERVAL}
+      snapToAlignment="start"
+      contentContainerStyle={{
+        paddingHorizontal: Math.max(0, sidePadding),
+        paddingVertical: 16,
+        gap: CARD_GAP,
+      }}
+      onScroll={Animated.event(
+        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+        { useNativeDriver: true },
+      )}
+      scrollEventThrottle={16}
+      testID="photo-timeline"
+    >
+      {items.map((item, i) => {
+        const inputRange = [
+          (i - 1) * SNAP_INTERVAL,
+          i * SNAP_INTERVAL,
+          (i + 1) * SNAP_INTERVAL,
+        ];
+        const scale = scrollX.interpolate({
+          inputRange,
+          outputRange: [0.9, 1, 0.9],
+          extrapolate: "clamp",
+        });
+        const opacity = scrollX.interpolate({
+          inputRange,
+          outputRange: [0.55, 1, 0.55],
+          extrapolate: "clamp",
+        });
+
+        if ("add" in item) {
+          return (
+            <Animated.View
+              key="add-card"
+              style={[styles.timelineCardWrap, { transform: [{ scale }], opacity }]}
+            >
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.addCard}
+                onPress={onAdd}
+                testID="photo-add"
+              >
+                <View style={styles.addCardIcon}>
+                  <Plus color={Colors.primary} size={32} />
+                </View>
+                <Text style={styles.addCardTitle}>Add photo</Text>
+                <Text style={styles.addCardSub}>Capture today</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        }
+
+        const isLatest = i === photos.length - 1;
+        return (
+          <Animated.View
+            key={item.slot}
+            style={[styles.timelineCardWrap, { transform: [{ scale }], opacity }]}
+          >
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={[styles.timelineCard, isLatest && styles.timelineCardLatest]}
+              onPress={() => onOpen(item)}
+              testID={`photo-${item.date ?? item.slot}`}
+            >
+              <Image source={{ uri: item.uri }} style={styles.timelineImg} />
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.85)"]}
+                style={styles.timelineGradient}
+                pointerEvents="none"
+              />
+              {isLatest && (
+                <View style={styles.timelineLatestBadge}>
+                  <View style={styles.timelineLatestDot} />
+                  <Text style={styles.timelineLatestText}>LATEST</Text>
+                </View>
+              )}
+              <View style={styles.timelineMeta}>
+                <Text style={styles.timelineDate}>{formatPhotoDate(item.date)}</Text>
+                {item.weight && (
+                  <Text style={styles.timelineWeight}>{item.weight}</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
+    </Animated.ScrollView>
   );
 }
 
@@ -985,6 +1130,161 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   photoDateText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+
+  timelineCardWrap: {
+    width: CARD_W,
+  },
+  timelineCard: {
+    width: CARD_W,
+    aspectRatio: 3 / 4,
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    position: "relative",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+      },
+      android: { elevation: 8 },
+      default: {},
+    }),
+  },
+  timelineCardLatest: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.primary,
+        shadowOpacity: 0.45,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 0 },
+      },
+      default: {},
+    }),
+  },
+  timelineImg: { width: "100%", height: "100%" },
+  timelineGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "55%",
+  },
+  timelineLatestBadge: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  timelineLatestDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+  },
+  timelineLatestText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+  },
+  timelineMeta: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 16,
+  },
+  timelineDate: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  timelineWeight: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 2,
+    letterSpacing: 0.3,
+  },
+  addCard: {
+    width: CARD_W,
+    aspectRatio: 3 / 4,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,107,53,0.06)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,107,53,0.35)",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  addCardIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255,107,53,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255,107,53,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addCardTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  addCardSub: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  emptyTimeline: {
+    marginTop: 16,
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,107,53,0.06)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,107,53,0.35)",
+    borderStyle: "dashed",
+    alignItems: "center",
+    gap: 10,
+  },
+  emptyTimelineIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255,107,53,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255,107,53,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTimelineTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  emptyTimelineSub: {
+    color: Colors.textMuted,
+    fontSize: 13,
+  },
 
   modalBackdrop: {
     flex: 1,
