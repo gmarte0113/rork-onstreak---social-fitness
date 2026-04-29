@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 
 export function HeaderBackButton({ canGoBack }: { canGoBack?: boolean }) {
@@ -24,7 +24,7 @@ export function HeaderBackButton({ canGoBack }: { canGoBack?: boolean }) {
       ]}
     >
       <View style={styles.circle}>
-        <ArrowLeft color="#FFFFFF" size={18} strokeWidth={3} />
+        <ChevronLeft color="#FFFFFF" size={22} strokeWidth={2.75} />
       </View>
     </Pressable>
   );
@@ -32,18 +32,18 @@ export function HeaderBackButton({ canGoBack }: { canGoBack?: boolean }) {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingLeft: 4,
+    paddingLeft: 8,
     paddingRight: 8,
     paddingVertical: 4,
   },
   circle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    paddingRight: 1,
+    overflow: "hidden",
   },
   pressed: {
     opacity: 0.85,
