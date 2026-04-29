@@ -119,15 +119,6 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
           { scale: enterScale },
         ];
 
-  const highlightX = tiltY.interpolate({
-    inputRange: [-MAX_TILT, MAX_TILT],
-    outputRange: [-MEDAL_SIZE * 0.25, MEDAL_SIZE * 0.25],
-  });
-  const highlightY = tiltX.interpolate({
-    inputRange: [-MAX_TILT, MAX_TILT],
-    outputRange: [MEDAL_SIZE * 0.25, -MEDAL_SIZE * 0.25],
-  });
-
   return (
     <Modal
       visible={visible}
@@ -171,21 +162,6 @@ export const MedalViewerModal = React.memo(function MedalViewerModal({
               style={{ width: MEDAL_SIZE, height: MEDAL_SIZE, backgroundColor: "transparent" }}
               contentFit="contain"
               transition={250}
-            />
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.highlight,
-                {
-                  width: MEDAL_SIZE * 0.6,
-                  height: MEDAL_SIZE * 0.6,
-                  borderRadius: MEDAL_SIZE * 0.3,
-                  transform: [
-                    { translateX: highlightX },
-                    { translateY: highlightY },
-                  ],
-                },
-              ]}
             />
           </Animated.View>
 
@@ -243,13 +219,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 28,
     backgroundColor: "transparent",
-    overflow: "hidden",
-  },
-  highlight: {
-    position: "absolute",
-    top: "10%",
-    left: "10%",
-    backgroundColor: "rgba(255,255,255,0.08)",
   },
   title: {
     color: Colors.text,
