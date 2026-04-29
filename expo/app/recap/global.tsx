@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import {
-  Platform,
   ScrollView,
   Share,
   StyleSheet,
@@ -10,7 +9,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
-import { Activity, Clock, Dumbbell, Flame, Share2, TrendingUp } from "lucide-react-native";
+import { Activity, Clock, Flame, Share2, Sparkles, TrendingUp } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
 import { toDateKey } from "@/constants/workouts";
@@ -29,10 +28,17 @@ export default function GlobalRecapScreen() {
     return { done, pct: Math.round((done / 30) * 100) };
   }, [state.completedDates]);
 
+  const formatTime = (mins: number): string => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h <= 0) return `${m}m`;
+    return `${h}h ${m}m`;
+  };
+
   const share = async () => {
     try {
       await Share.share({
-        message: `My last 30 days on OnStreak: ${consistency.done} workouts, ${state.totalReps} reps, ${state.streak} day streak. 🔥`,
+        message: `My last 30 days on OnStreak: ${consistency.done} workouts, ${state.totalReps} reps, ${state.streak} day streak.`,
       });
     } catch (e) {
       console.log("share", e);
@@ -42,54 +48,74 @@ export default function GlobalRecapScreen() {
   return (
     <View style={styles.safe}>
       <Stack.Screen options={{ title: "30-Day Recap" }} />
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <LinearGradient
-          colors={["rgba(255,107,53,0.25)", "transparent"]}
-          style={styles.hero}
-        />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.label}>YOUR LAST 30 DAYS</Text>
-        <Text style={styles.title}>You showed up.</Text>
+        <Text style={styles.title}>
+          You showed up<Text style={styles.titleDot}>.</Text>
+        </Text>
         <Text style={styles.sub}>
           A snapshot of everything you&apos;ve done this month.
         </Text>
 
         <View style={styles.big}>
+          <CardGlow />
           <Text style={styles.bigValue}>{consistency.done}</Text>
           <Text style={styles.bigLabel}>workouts completed</Text>
           <View style={styles.track}>
             <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
+              colors={[Colors.primary, Colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={[styles.fill, { width: `${consistency.pct}%` }]}
+              style={[styles.fill, { width: `${Math.min(100, consistency.pct)}%` }]}
             />
           </View>
-          <Text style={styles.pctText}>
-            {consistency.pct}% consistency
-          </Text>
+          <View style={styles.progressRow}>
+            <Text style={styles.pctValue}>
+              {consistency.pct}% <Text style={styles.pctLabel}>consistency</Text>
+            </Text>
+            <Text style={styles.daysOf}>{consistency.done} of 30 days</Text>
+          </View>
         </View>
 
         <View style={styles.grid}>
-          <StatCard
-            icon={<Flame color={Colors.primary} size={20} />}
-            value={String(state.streak)}
-            label="Current streak"
-          />
-          <StatCard
-            icon={<Dumbbell color={Colors.accent} size={20} />}
-            value={state.totalReps.toLocaleString()}
-            label="Total reps"
-          />
-          <StatCard
-            icon={<Clock color={Colors.accent} size={20} />}
-            value={`${state.totalMinutes}m`}
-            label="Time spent"
-          />
-          <StatCard
-            icon={<TrendingUp color={Colors.success} size={20} />}
-            value={String(state.completedDates.length)}
-            label="All-time"
-          />
+          <View style={styles.statCard}>
+            <CardGlow />
+            <View style={styles.statIcon}>
+              <Flame color={Colors.primary} size={16} />
+            </View>
+            <View style={styles.streakRow}>
+              <Text style={styles.streakValue}>{state.streak}</Text>
+              <Text style={styles.streakUnit}>DAYS</Text>
+            </View>
+            <Text style={styles.statLabel}>Current streak</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <CardGlow />
+            <View style={styles.statIcon}>
+              <Sparkles color={Colors.primary} size={16} />
+            </View>
+            <Text style={styles.statValue}>{state.totalReps.toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Total reps</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <CardGlow />
+            <View style={styles.statIcon}>
+              <Clock color={Colors.primary} size={16} />
+            </View>
+            <Text style={styles.statValue}>{formatTime(state.totalMinutes)}</Text>
+            <Text style={styles.statLabel}>Time spent</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <CardGlow />
+            <View style={styles.statIcon}>
+              <TrendingUp color={Colors.primary} size={16} />
+            </View>
+            <Text style={styles.statValue}>{state.completedDates.length}</Text>
+            <Text style={styles.statLabel}>All-time</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -104,7 +130,7 @@ export default function GlobalRecapScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.shareGradient}
           >
-            <Share2 color={Colors.text} size={16} />
+            <Share2 color={Colors.text} size={18} />
             <Text style={styles.shareText}>Share my recap</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -112,8 +138,9 @@ export default function GlobalRecapScreen() {
         <TouchableOpacity
           style={styles.secondary}
           onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <Activity color={Colors.textMuted} size={16} />
+          <Activity color={Colors.textMuted} size={14} />
           <Text style={styles.secondaryText}>Keep the streak alive</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -121,88 +148,106 @@ export default function GlobalRecapScreen() {
   );
 }
 
-function StatCard({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-}) {
+function CardGlow() {
   return (
-    <View style={styles.statCard}>
-      <View style={styles.statIcon}>{icon}</View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    <LinearGradient
+      colors={["rgba(255,107,53,0.18)", "rgba(255,107,53,0)"]}
+      start={{ x: 1, y: 0 }}
+      end={{ x: 0.3, y: 1 }}
+      style={styles.cardGlow}
+      pointerEvents="none"
+    />
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   scroll: { padding: 20, paddingBottom: 60 },
-  hero: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 240,
-  },
   label: {
-    color: Colors.accent,
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.5,
+    color: Colors.primary,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.6,
     marginTop: 8,
   },
   title: {
     color: Colors.text,
-    fontSize: 34,
+    fontSize: 40,
     fontWeight: "900",
-    letterSpacing: -1,
-    marginTop: 6,
+    letterSpacing: -1.2,
+    marginTop: 8,
+    lineHeight: 44,
   },
+  titleDot: { color: Colors.primary },
   sub: {
     color: Colors.textMuted,
-    fontSize: 14,
-    marginTop: 6,
-    marginBottom: 24,
+    fontSize: 15,
+    marginTop: 10,
+    marginBottom: 20,
   },
   big: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 24,
-    padding: 22,
+    padding: 24,
     marginBottom: 14,
+    overflow: "hidden",
+  },
+  cardGlow: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   bigValue: {
     color: Colors.text,
-    fontSize: 64,
+    fontSize: 84,
     fontWeight: "900",
-    letterSpacing: -2,
+    letterSpacing: -3,
+    lineHeight: 88,
   },
-  bigLabel: { color: Colors.textMuted, fontSize: 13, fontWeight: "600" },
-  track: {
-    height: 8,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 4,
-    overflow: "hidden",
-    marginTop: 16,
-  },
-  fill: { height: "100%", borderRadius: 4 },
-  pctText: {
+  bigLabel: {
     color: Colors.text,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: "700",
-    marginTop: 8,
+    marginTop: 4,
+  },
+  track: {
+    height: 10,
+    backgroundColor: "#2A2A30",
+    borderRadius: 6,
+    overflow: "hidden",
+    marginTop: 22,
+  },
+  fill: { height: "100%", borderRadius: 6 },
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+  },
+  pctValue: {
+    color: Colors.primary,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  pctLabel: {
+    color: Colors.text,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  daysOf: {
+    color: Colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 24,
   },
   statCard: {
     flexBasis: "48%",
@@ -210,36 +255,74 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
+    minHeight: 150,
+    justifyContent: "space-between",
+    overflow: "hidden",
   },
   statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.surfaceElevated,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,107,53,0.12)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 24,
   },
-  statValue: { color: Colors.text, fontSize: 22, fontWeight: "800" },
-  statLabel: { color: Colors.textMuted, fontSize: 12, marginTop: 2 },
-  shareBtn: { borderRadius: 14, overflow: "hidden" },
+  statValue: {
+    color: Colors.text,
+    fontSize: 32,
+    fontWeight: "900",
+    letterSpacing: -1,
+  },
+  statLabel: {
+    color: Colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  streakRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+  },
+  streakValue: {
+    color: Colors.primary,
+    fontSize: 32,
+    fontWeight: "900",
+    letterSpacing: -1,
+  },
+  streakUnit: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  shareBtn: {
+    borderRadius: 999,
+    overflow: "hidden",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
+  },
   shareGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
+    gap: 10,
+    paddingVertical: 18,
   },
-  shareText: { color: Colors.text, fontSize: 15, fontWeight: "800" },
+  shareText: { color: Colors.text, fontSize: 16, fontWeight: "800" },
   secondary: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 16,
-    marginTop: 8,
+    paddingVertical: 18,
+    marginTop: 4,
   },
-  secondaryText: { color: Colors.textMuted, fontSize: 13, fontWeight: "600" },
+  secondaryText: { color: Colors.textMuted, fontSize: 14, fontWeight: "600" },
 });
