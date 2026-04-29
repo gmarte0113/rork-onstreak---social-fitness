@@ -100,10 +100,8 @@ export default function WorkoutScreen() {
     setPhase("done");
     (async () => {
       try {
-        const wasFirst = await markFirstWorkoutCompletedIfNeeded();
-        if (wasFirst) {
-          scheduleFirstWorkoutReviewPrompt(3000);
-        }
+        await markFirstWorkoutCompletedIfNeeded();
+        scheduleFirstWorkoutReviewPrompt(3000);
       } catch (e) {
         console.log("[workout] review schedule error", e);
       }

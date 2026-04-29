@@ -122,10 +122,8 @@ export default function WorkoutPhotoScreen() {
       }
       router.back();
       try {
-        const wasFirst = await markFirstWorkoutCompletedIfNeeded();
-        if (wasFirst) {
-          scheduleFirstWorkoutReviewPrompt(3000);
-        }
+        await markFirstWorkoutCompletedIfNeeded();
+        scheduleFirstWorkoutReviewPrompt(3000);
       } catch (e) {
         console.log("[workout-photo] review schedule error", e);
       }
