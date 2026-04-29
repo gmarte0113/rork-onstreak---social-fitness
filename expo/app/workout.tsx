@@ -17,6 +17,10 @@ import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
 import { getExerciseDescription } from "@/constants/workouts";
 import AnimatedCheckmark from "@/components/AnimatedCheckmark";
 import { track } from "@/utils/analytics";
+import {
+  markFirstWorkoutCompletedIfNeeded,
+  scheduleFirstWorkoutReviewPrompt,
+} from "@/lib/review";
 
 const REP_TIMER_SECONDS = 30;
 
@@ -94,6 +98,16 @@ export default function WorkoutScreen() {
     scale.setValue(0);
     fade.setValue(0);
     setPhase("done");
+    (async () => {
+      try {
+        const wasFirst = await markFirstWorkoutCompletedIfNeeded();
+        if (wasFirst) {
+          scheduleFirstWorkoutReviewPrompt(3000);
+        }
+      } catch (e) {
+        console.log("[workout] review schedule error", e);
+      }
+    })();
   };
 
   return (

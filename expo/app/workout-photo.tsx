@@ -22,7 +22,10 @@ import {
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { estimateWorkoutReps, useApp } from "@/providers/AppProvider";
-import { maybeRequestFirstWorkoutReview } from "@/lib/review";
+import {
+  markFirstWorkoutCompletedIfNeeded,
+  scheduleFirstWorkoutReviewPrompt,
+} from "@/lib/review";
 
 type Source = "today" | "plan" | "program";
 
@@ -118,11 +121,14 @@ export default function WorkoutPhotoScreen() {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       router.back();
-      setTimeout(() => {
-        maybeRequestFirstWorkoutReview().catch((e) =>
-          console.log("[workout-photo] review error", e)
-        );
-      }, 600);
+      try {
+        const wasFirst = await markFirstWorkoutCompletedIfNeeded();
+        if (wasFirst) {
+          scheduleFirstWorkoutReviewPrompt(3000);
+        }
+      } catch (e) {
+        console.log("[workout-photo] review schedule error", e);
+      }
     } finally {
       setSubmitting(false);
     }

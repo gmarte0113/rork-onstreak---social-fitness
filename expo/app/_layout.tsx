@@ -10,6 +10,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "@/providers/AppProvider";
 import { Colors } from "@/constants/colors";
 import { MedalModal } from "@/components/MedalModal";
+import { ReviewPromptModal } from "@/components/ReviewPromptModal";
 import { HeaderBackButton } from "@/components/HeaderBackButton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PostHogProvider, usePostHog } from "posthog-react-native";
@@ -89,6 +90,7 @@ export default function RootLayout() {
                 <StatusBar style="light" />
                 <RootLayoutNav />
                 <MedalModal />
+                <ReviewPromptModal />
               </GestureHandlerRootView>
             </PostHogProvider>
           </AppProvider>
