@@ -873,7 +873,6 @@ const styles = StyleSheet.create({
   },
   streakNumberWrap: {
     position: "relative",
-    minWidth: 44,
     justifyContent: "flex-end",
   },
   streakOldNumber: {
@@ -951,8 +950,8 @@ const styles = StyleSheet.create({
   },
   streakValueRow: {
     flexDirection: "row",
-    alignItems: "baseline",
-    gap: 10,
+    alignItems: "flex-end",
+    gap: 8,
     marginBottom: 14,
   },
   streakBigNumber: {
@@ -962,12 +961,15 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     lineHeight: 64,
     includeFontPadding: false,
+    textAlignVertical: "bottom",
   },
   streakDayText: {
     color: "rgba(255,255,255,0.7)",
     fontSize: 20,
     fontWeight: "700",
+    lineHeight: 24,
     includeFontPadding: false,
+    paddingBottom: 8,
   },
   donePill: {
     alignSelf: "flex-start",
