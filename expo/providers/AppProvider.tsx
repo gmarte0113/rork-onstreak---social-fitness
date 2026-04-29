@@ -42,7 +42,7 @@ import {
   fetchUserPushToken,
   sendExpoPushNotification,
 } from "@/lib/notifications";
-import { initPurchases, getIsPro, isPurchasesSupported } from "@/lib/purchases";
+import { initPurchases, getIsPro, isPurchasesSupported, logOutPurchases } from "@/lib/purchases";
 import {
   createGroupRemote,
   joinGroupRemote,
@@ -704,9 +704,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   useEffect(() => {
     if (!isPurchasesSupported) return;
+    if (!supabaseUserId) {
+      logOutPurchases().catch(() => {});
+      return;
+    }
     let cancelled = false;
     (async () => {
-      const ok = await initPurchases(supabaseUserId ?? undefined);
+      console.log("[AppProvider] initPurchases with supabase user", supabaseUserId);
+      const ok = await initPurchases(supabaseUserId);
       if (!ok || cancelled) return;
       try {
         const isPro = await getIsPro();

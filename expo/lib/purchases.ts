@@ -34,17 +34,24 @@ let configureCalled = false;
 let initError: string | null = null;
 let PurchasesRef: typeof Purchases | null = null;
 let initPromise: Promise<boolean> | null = null;
+let currentAppUserId: string | null = null;
 
 export async function initPurchases(appUserId?: string | null): Promise<boolean> {
   if (!isPurchasesSupported) {
     console.log("[purchases] init skipped: platform not supported", Platform.OS);
     return false;
   }
+  if (!appUserId) {
+    console.log("[purchases] init skipped: waiting for authenticated Supabase user id");
+    return initialized;
+  }
   if (initPromise) return initPromise;
   if (initialized && PurchasesRef) {
-    if (appUserId) {
+    if (currentAppUserId !== appUserId) {
       try {
+        console.log("[purchases] logIn switching appUserID", appUserId);
         await PurchasesRef.logIn(appUserId);
+        currentAppUserId = appUserId;
       } catch (e) {
         console.log("[purchases] logIn error", e);
       }
@@ -64,7 +71,9 @@ export async function initPurchases(appUserId?: string | null): Promise<boolean>
         const mod = await import("react-native-purchases");
         PurchasesRef = mod.default;
       }
-      PurchasesRef.configure({ apiKey, appUserID: appUserId ?? undefined });
+      console.log("[purchases] configure with appUserID", appUserId);
+      PurchasesRef.configure({ apiKey, appUserID: appUserId });
+      currentAppUserId = appUserId;
       configureCalled = true;
       initialized = true;
       initError = null;
@@ -82,9 +91,20 @@ export async function initPurchases(appUserId?: string | null): Promise<boolean>
   return initPromise;
 }
 
+export async function logOutPurchases(): Promise<void> {
+  if (!isPurchasesSupported || !initialized || !PurchasesRef) return;
+  try {
+    await PurchasesRef.logOut();
+    currentAppUserId = null;
+    console.log("[purchases] logged out");
+  } catch (e) {
+    console.log("[purchases] logOut error", e);
+  }
+}
+
 async function ensureInitialized(): Promise<boolean> {
   if (initialized && PurchasesRef) return true;
-  return initPurchases();
+  return false;
 }
 
 export async function getCurrentOffering(): Promise<PurchasesOffering | null> {
