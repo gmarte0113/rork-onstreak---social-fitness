@@ -532,7 +532,7 @@ function ExerciseRow({ name, reps }: { name: string; reps: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
   scroll: { padding: 20, paddingBottom: 120 },
   header: {
     flexDirection: "row",

@@ -782,7 +782,7 @@ function PhotoTile({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
   scroll: { padding: 20, paddingBottom: 140 },
 
   title: {

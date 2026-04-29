@@ -356,7 +356,7 @@ function ChallengeCard({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
   scroll: { paddingHorizontal: GRID_PAD, paddingTop: 8, paddingBottom: 140 },
   h1: {
     color: Colors.text,
