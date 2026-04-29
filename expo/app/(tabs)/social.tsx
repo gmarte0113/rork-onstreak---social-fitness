@@ -387,7 +387,6 @@ export default function SocialScreen() {
         }
       >
         <Text style={styles.title}>Social</Text>
-        <Text style={styles.subtitle}>Squad up. Stay consistent.</Text>
 
         <TouchableOpacity
           style={styles.recapCard}
@@ -877,14 +876,9 @@ const styles = StyleSheet.create({
   scroll: { padding: 20, paddingBottom: 120 },
   title: {
     color: Colors.text,
-    fontSize: 30,
+    fontSize: 38,
     fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: Colors.textMuted,
-    fontSize: 14,
-    marginTop: 4,
+    letterSpacing: -1,
     marginBottom: 20,
   },
   recapCard: {
