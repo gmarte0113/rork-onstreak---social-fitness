@@ -255,12 +255,16 @@ export default function GroupScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <Trophy color={Colors.accent} size={16} />
-            <Text style={styles.statValue}>{groupStreak}</Text>
+            <View style={styles.statIcon}>
+              <Trophy color={Colors.accent} size={14} />
+            </View>
+            <Text style={[styles.statValue, styles.statValueOrange]}>{groupStreak}</Text>
             <Text style={styles.statLabel}>Group streak</Text>
           </View>
           <View style={styles.stat}>
-            <Check color={Colors.success} size={16} />
+            <View style={styles.statIcon}>
+              <Check color={Colors.success} size={14} strokeWidth={3} />
+            </View>
             <Text style={styles.statValue}>
               {doneToday}/{group.members.length}
             </Text>
@@ -808,37 +812,48 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   copyBtn: {
-    backgroundColor: Colors.surfaceElevated,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  copyText: { color: Colors.text, fontSize: 12, fontWeight: "800" },
+  copyText: { color: Colors.text, fontSize: 14, fontWeight: "800" },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
   stat: {
     flex: 1,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 14,
-    padding: 14,
-    gap: 6,
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+    minHeight: 120,
+    justifyContent: "space-between",
   },
-  statValue: { color: Colors.text, fontSize: 20, fontWeight: "900" },
-  statLabel: { color: Colors.textMuted, fontSize: 11, fontWeight: "600" },
+  statIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statValue: { color: Colors.text, fontSize: 36, fontWeight: "900", letterSpacing: -1 },
+  statValueOrange: { color: Colors.primary },
+  statLabel: { color: Colors.text, fontSize: 13, fontWeight: "700" },
   chatBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 14,
-    paddingVertical: 14,
-    marginBottom: 20,
+    paddingVertical: 16,
+    marginBottom: 24,
   },
-  chatText: { color: Colors.text, fontSize: 14, fontWeight: "800" },
+  chatText: { color: Colors.text, fontSize: 15, fontWeight: "800" },
   section: {
     color: Colors.textMuted,
     fontSize: 11,
