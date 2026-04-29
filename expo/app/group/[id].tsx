@@ -297,7 +297,7 @@ export default function GroupScreen() {
           <Text style={styles.chatText}>Open chat</Text>
           {hasUnread && (
             <View style={styles.newPill} testID="chat-new-pill">
-              <Text style={styles.newPillText}>New</Text>
+              <Text style={styles.newPillText}>Unread</Text>
             </View>
           )}
         </TouchableOpacity>
