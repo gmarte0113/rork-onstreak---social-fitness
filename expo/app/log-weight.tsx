@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, X } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
+import { toDateKey } from "@/constants/workouts";
 import { useApp } from "@/providers/AppProvider";
 import type { WeightUnit } from "@/providers/AppProvider";
 
@@ -28,6 +29,18 @@ export default function LogWeightScreen() {
 
   const pickPhoto = async () => {
     try {
+      const todayKeyLocal = toDateKey(new Date());
+      const hasPhotoToday =
+        state.beforePhoto?.date === todayKeyLocal ||
+        state.afterPhoto?.date === todayKeyLocal ||
+        (state.extraPhotos ?? []).some((p) => p.date === todayKeyLocal);
+      if (hasPhotoToday) {
+        Alert.alert(
+          "Daily limit reached",
+          "You can only add one progress photo per day. Come back tomorrow!"
+        );
+        return;
+      }
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         Alert.alert("Permission needed", "Please allow photo library access.");

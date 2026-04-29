@@ -82,6 +82,18 @@ export default function ProgressScreen() {
 
   const pickAndAddPhoto = async () => {
     try {
+      const todayKeyLocal = toDateKey(new Date());
+      const hasPhotoToday =
+        state.beforePhoto?.date === todayKeyLocal ||
+        state.afterPhoto?.date === todayKeyLocal ||
+        (state.extraPhotos ?? []).some((p) => p.date === todayKeyLocal);
+      if (hasPhotoToday) {
+        Alert.alert(
+          "Daily limit reached",
+          "You can only add one progress photo per day. Come back tomorrow!"
+        );
+        return;
+      }
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         Alert.alert("Permission needed", "Please allow photo library access.");
