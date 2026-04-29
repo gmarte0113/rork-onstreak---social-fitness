@@ -14,16 +14,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from "react-native-svg";
 import {
   ChevronLeft,
   ChevronRight,
   Camera,
-  Scale,
-  TrendingUp,
   X,
   Trash2,
-  BarChart3,
   ArrowRight,
+  LineChart,
+  Plus,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
@@ -36,9 +37,6 @@ function startOfMonth(d: Date): Date {
 }
 function endOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
-}
-function monthName(d: Date): string {
-  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 export default function ProgressScreen() {
@@ -65,10 +63,14 @@ export default function ProgressScreen() {
     [state.completedDates]
   );
   const todayKey = toDateKey(new Date());
+  const today = new Date();
 
   const monthCompleted = useMemo(() => {
     return days.filter((d) => d && completedSet.has(toDateKey(d))).length;
   }, [days, completedSet]);
+
+  const todayDayNum = today.getDate();
+  const todayMonthShort = today.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
 
   const pickImage = async (which: "before" | "after") => {
     try {
@@ -108,12 +110,33 @@ export default function ProgressScreen() {
     return null;
   }, [state.beforePhoto, state.afterPhoto]);
 
-  const latestWeight = state.weights[state.weights.length - 1];
   const unit = state.weightUnit;
-  const toDisplay = (kg: number): string => {
+  const toDisplay = (kg: number): number => {
     const v = unit === "kg" ? kg : kg * 2.20462;
-    return (Math.round(v * 10) / 10).toString();
+    return Math.round(v * 10) / 10;
   };
+
+  const weightStats = useMemo(() => {
+    const ws = state.weights;
+    if (ws.length === 0) {
+      return null;
+    }
+    const latest = ws[ws.length - 1];
+    const first = ws[0];
+    const latestVal = toDisplay(latest.weightKg);
+    const firstVal = toDisplay(first.weightKg);
+    const change = Math.round((latestVal - firstVal) * 10) / 10;
+    return {
+      latestVal,
+      firstVal,
+      change,
+      latestDate: latest.date ?? "",
+      firstDate: first.date ?? "",
+      count: ws.length,
+    };
+  }, [state.weights, unit]);
+
+  const photoCount = filledPhotos.length;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -122,200 +145,292 @@ export default function ProgressScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Progress</Text>
-        <Text style={styles.subtitle}>Your consistency in one place.</Text>
 
         <TouchableOpacity
-          style={styles.insightsBtn}
+          activeOpacity={0.9}
           onPress={() => router.push("/insights")}
-          activeOpacity={0.85}
           testID="open-insights"
+          style={styles.insightsWrap}
         >
-          <View style={styles.insightsIcon}>
-            <BarChart3 color={Colors.accent} size={18} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.insightsTitle}>Progress insights</Text>
-            <Text style={styles.insightsSub}>
-              {state.isPremium
-                ? "See your reps, time & consistency"
-                : "Preview stats — full analytics with Pro"}
-            </Text>
-          </View>
-          <ArrowRight color={Colors.textMuted} size={16} />
+          <LinearGradient
+            colors={["#1A1410", "#3D1F0E", "#7A2F0A"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.insightsCard}
+          >
+            <View style={styles.insightsIcon}>
+              <LineChart color={Colors.primary} size={22} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.insightsTitle}>Insights</Text>
+              <Text style={styles.insightsSub}>
+                See your reps, time & consistency
+              </Text>
+            </View>
+            <View style={styles.insightsArrow}>
+              <ArrowRight color="#fff" size={18} />
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
 
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{state.streak}</Text>
-            <Text style={styles.statLabel}>Current streak</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{state.completedDates.length}</Text>
-            <Text style={styles.statLabel}>Total workouts</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{monthCompleted}</Text>
-            <Text style={styles.statLabel}>This month</Text>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.calHeader}>
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() =>
-                setCursor(
-                  new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)
-                )
-              }
-            >
-              <ChevronLeft color={Colors.text} size={20} />
-            </TouchableOpacity>
-            <Text style={styles.calTitle}>{monthName(cursor)}</Text>
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() =>
-                setCursor(
-                  new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
-                )
-              }
-            >
-              <ChevronRight color={Colors.text} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.weekRow}>
-            {WEEKDAYS.map((w, i) => (
-              <Text key={`${w}-${i}`} style={styles.weekday}>
-                {w}
+          <View style={[styles.statCol, styles.statColFirst]}>
+            <View style={styles.statValueRow}>
+              <Text style={[styles.statValueBig, { color: Colors.primary }]}>
+                {state.streak}
               </Text>
-            ))}
+              <Text style={styles.statValueSuffix}>DAYS</Text>
+            </View>
+            <Text style={styles.statLabel}>STREAK</Text>
           </View>
-          <View style={styles.grid}>
-            {days.map((d, idx) => {
-              if (!d) {
-                return <View key={`empty-${idx}`} style={styles.cellEmpty} />;
-              }
-              const key = toDateKey(d);
-              const isDone = completedSet.has(key);
-              const isToday = key === todayKey;
-              return (
-                <View
-                  key={key}
-                  style={[
-                    styles.cell,
-                    isDone && styles.cellDone,
-                    isToday && styles.cellToday,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.cellText,
-                      isDone && styles.cellTextDone,
-                    ]}
-                  >
-                    {d.getDate()}
-                  </Text>
-                </View>
-              );
-            })}
+          <View style={styles.statDivider} />
+          <View style={styles.statCol}>
+            <View style={styles.statValueRow}>
+              <Text style={styles.statValueBig}>{state.completedDates.length}</Text>
+            </View>
+            <Text style={styles.statLabel}>WORKOUTS</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCol}>
+            <View style={styles.statValueRow}>
+              <Text style={styles.statValueBig}>{todayDayNum}</Text>
+              <Text style={styles.statValueSuffix}>{todayMonthShort}</Text>
+            </View>
+            <Text style={styles.statLabel}>THIS MONTH</Text>
           </View>
         </View>
 
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Weight</Text>
-          <TouchableOpacity onPress={() => router.push("/log-weight")}>
-            <Text style={styles.linkText}>Log weight</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.weightRow}>
-            <View style={styles.weightIcon}>
-              <Scale color={Colors.primary} size={22} />
-            </View>
+        <Text style={styles.sectionLabel}>CALENDAR</Text>
+        <View style={styles.calendarCard}>
+          <LinearGradient
+            colors={["#FF7A3D", "#E8561F"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.calendarHeader}
+          >
+            <View style={styles.calendarHeaderDots} pointerEvents="none" />
             <View style={{ flex: 1 }}>
-              {latestWeight ? (
-                <>
-                  <Text style={styles.weightValue}>
-                    {toDisplay(latestWeight.weightKg)} {unit}
-                  </Text>
-                  <Text style={styles.weightMeta}>
-                    Logged {latestWeight.date}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.weightValue}>— {unit}</Text>
-                  <Text style={styles.weightMeta}>No entries yet</Text>
-                </>
-              )}
+              <Text style={styles.calendarMonth}>
+                {cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" }).toUpperCase()}
+              </Text>
+              <View style={styles.calendarSessionRow}>
+                <Text style={styles.calendarSessionNum}>{monthCompleted}</Text>
+                <Text style={styles.calendarSessionLabel}>SESSIONS</Text>
+              </View>
             </View>
-            <TrendingUp color={Colors.textMuted} size={18} />
-          </View>
-          {state.weights.length > 1 && (
-            <View style={styles.historyList}>
-              {state.weights.slice(-4).reverse().map((w, i) => (
-                <View key={`${w.date ?? "nodate"}-${i}`} style={styles.historyRow}>
-                  <Text style={styles.historyDate}>{w.date}</Text>
-                  <Text style={styles.historyValue}>{toDisplay(w.weightKg)} {unit}</Text>
-                </View>
+            <View style={styles.calArrows}>
+              <TouchableOpacity
+                style={styles.calArrowBtn}
+                onPress={() =>
+                  setCursor(
+                    new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)
+                  )
+                }
+                testID="cal-prev"
+              >
+                <ChevronLeft color="#fff" size={18} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.calArrowBtn}
+                onPress={() =>
+                  setCursor(
+                    new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
+                  )
+                }
+                testID="cal-next"
+              >
+                <ChevronRight color="#fff" size={18} />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+
+          <View style={styles.calendarBody}>
+            <View style={styles.weekRow}>
+              {WEEKDAYS.map((w, i) => (
+                <Text key={`${w}-${i}`} style={styles.weekday}>
+                  {w}
+                </Text>
               ))}
             </View>
+            <View style={styles.grid}>
+              {days.map((d, idx) => {
+                if (!d) {
+                  return <View key={`empty-${idx}`} style={styles.cellEmpty} />;
+                }
+                const key = toDateKey(d);
+                const isDone = completedSet.has(key);
+                const isToday = key === todayKey;
+                const isPast = d.getTime() < today.getTime() && !isToday;
+                const isMissed = isPast && !isDone;
+                return (
+                  <View key={key} style={styles.cell}>
+                    {isToday ? (
+                      <View style={styles.dotToday} />
+                    ) : isDone ? (
+                      <View style={styles.dotDone} />
+                    ) : isMissed ? (
+                      <View style={styles.dotMissed} />
+                    ) : (
+                      <View style={styles.dotFuture} />
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <View style={styles.dotDone} />
+                <Text style={styles.legendText}>TRAINED</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={styles.dotToday} />
+                <Text style={styles.legendText}>TODAY</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={styles.dotMissed} />
+                <Text style={styles.legendText}>BROKEN</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.sectionLabel}>WEIGHT</Text>
+        <View style={styles.weightCard}>
+          <View style={styles.weightTopRow}>
+            <View style={styles.weightBadge}>
+              <Text style={styles.weightBadgeText}>WEIGHT · 30 DAYS</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push("/log-weight")}
+              testID="log-weight-btn"
+            >
+              <LinearGradient
+                colors={[Colors.primary, Colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logWeightBtn}
+              >
+                <Plus color="#fff" size={16} />
+                <Text style={styles.logWeightText}>Log weight</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {weightStats ? (
+            <>
+              <View style={styles.weightValueRow}>
+                <Text style={styles.weightBig}>{weightStats.latestVal}</Text>
+                <Text style={styles.weightUnit}>{unit.toUpperCase()}</Text>
+                {weightStats.change !== 0 && (
+                  <Text
+                    style={[
+                      styles.weightChange,
+                      {
+                        color:
+                          weightStats.change < 0 ? Colors.success : Colors.danger,
+                      },
+                    ]}
+                  >
+                    {weightStats.change > 0 ? "+" : ""}
+                    {weightStats.change}
+                  </Text>
+                )}
+              </View>
+              <Text style={styles.weightMeta}>
+                Latest entry · {weightStats.latestDate}
+              </Text>
+
+              <WeightChart
+                weights={state.weights.map((w) => toDisplay(w.weightKg))}
+                latestVal={weightStats.latestVal}
+              />
+
+              <View style={styles.weightStatsRow}>
+                <View style={styles.weightStatCol}>
+                  <Text style={styles.weightStatVal}>{weightStats.firstVal}</Text>
+                  <Text style={styles.weightStatLabel}>STARTING</Text>
+                  <Text style={styles.weightStatSub}>{weightStats.firstDate}</Text>
+                </View>
+                <View style={styles.weightStatDivider} />
+                <View style={styles.weightStatCol}>
+                  <Text style={styles.weightStatVal}>{weightStats.latestVal}</Text>
+                  <Text style={styles.weightStatLabel}>CURRENT</Text>
+                  <Text style={styles.weightStatSub}>{weightStats.latestDate}</Text>
+                </View>
+                <View style={styles.weightStatDivider} />
+                <View style={styles.weightStatCol}>
+                  <Text
+                    style={[
+                      styles.weightStatVal,
+                      {
+                        color:
+                          weightStats.change <= 0
+                            ? Colors.success
+                            : Colors.danger,
+                      },
+                    ]}
+                  >
+                    {weightStats.change > 0 ? "+" : ""}
+                    {weightStats.change}
+                  </Text>
+                  <Text style={styles.weightStatLabel}>
+                    {unit.toUpperCase()} {weightStats.change <= 0 ? "LOST" : "GAINED"}
+                  </Text>
+                  <Text style={styles.weightStatSub}>
+                    {weightStats.count} entries
+                  </Text>
+                </View>
+              </View>
+            </>
+          ) : (
+            <View style={styles.weightEmpty}>
+              <Text style={styles.weightBig}>— {unit}</Text>
+              <Text style={styles.weightMeta}>No entries yet · tap Log weight</Text>
+            </View>
           )}
         </View>
 
-        {state.weights.some((w) => w.photoUri) && (
-          <>
-            <Text style={styles.sectionTitle}>Weight Journey</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.journeyRow}
-            >
-              {[...state.weights]
-                .filter((w) => w.photoUri)
-                .slice()
-                .reverse()
-                .map((w, i) => (
-                  <TouchableOpacity
-                    key={`${w.date}-${i}`}
-                    style={styles.journeyCard}
-                    activeOpacity={0.85}
-                    onPress={() =>
-                      w.photoUri &&
-                      setViewing({ slot: "before", uri: w.photoUri, date: w.date })
-                    }
-                  >
-                    {w.photoUri && (
-                      <Image source={{ uri: w.photoUri }} style={styles.journeyImg} />
-                    )}
-                    <View style={styles.journeyMeta}>
-                      <Text style={styles.journeyWeight}>
-                        {toDisplay(w.weightKg)} {unit}
-                      </Text>
-                      <Text style={styles.journeyDate}>{w.date}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-            </ScrollView>
-          </>
-        )}
+        <Text style={styles.sectionLabel}>PHOTOS</Text>
+        <View style={styles.photosCard}>
+          <View style={styles.weightTopRow}>
+            <View style={styles.photosBadge}>
+              <Text style={styles.photosBadgeText}>PHOTOS · {photoCount}</Text>
+            </View>
+            {nextEmptySlot && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => pickImage(nextEmptySlot)}
+                style={styles.addPhotoBtn}
+                testID="add-photo"
+              >
+                <Plus color="#A78BFA" size={16} />
+                <Text style={styles.addPhotoText}>Add</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-        <Text style={styles.sectionTitle}>Progress Photos</Text>
-        <View style={styles.photosRow}>
-          {filledPhotos.map((p) => (
-            <PhotoSlot
-              key={p.slot}
-              uri={p.uri}
-              date={p.date}
-              onPick={() => setViewing({ slot: p.slot, uri: p.uri, date: p.date })}
-            />
-          ))}
-          {nextEmptySlot && (
-            <PhotoSlot
-              key={`empty-${nextEmptySlot}`}
-              onPick={() => pickImage(nextEmptySlot)}
-            />
-          )}
+          <Text style={styles.photosTitle}>Progress photos</Text>
+          <Text style={styles.photosSub}>Compare side-by-side · weekly</Text>
+
+          <View style={styles.photosGrid}>
+            {filledPhotos.map((p, i) => (
+              <PhotoTile
+                key={p.slot}
+                uri={p.uri}
+                date={p.date}
+                isLatest={i === filledPhotos.length - 1}
+                onPick={() => setViewing({ slot: p.slot, uri: p.uri, date: p.date })}
+              />
+            ))}
+            {nextEmptySlot && (
+              <PhotoTile
+                key={`empty-${nextEmptySlot}`}
+                onPick={() => pickImage(nextEmptySlot)}
+              />
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -374,20 +489,72 @@ export default function ProgressScreen() {
   );
 }
 
-function PhotoSlot({
+function WeightChart({ weights, latestVal }: { weights: number[]; latestVal: number }) {
+  const W = 320;
+  const H = 140;
+  const PAD = 12;
+  const data = weights.length > 0 ? weights : [0];
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const stepX = data.length > 1 ? (W - PAD * 2) / (data.length - 1) : 0;
+
+  const points = data.map((v, i) => {
+    const x = PAD + i * stepX;
+    const y = PAD + ((max - v) / range) * (H - PAD * 2);
+    return { x, y };
+  });
+
+  const pathD = points
+    .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+    .join(" ");
+  const fillD = `${pathD} L ${points[points.length - 1]?.x ?? PAD} ${H} L ${points[0]?.x ?? PAD} ${H} Z`;
+
+  const last = points[points.length - 1];
+
+  return (
+    <View style={styles.chartWrap}>
+      <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <Defs>
+          <SvgGradient id="gradFill" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#22C55E" stopOpacity="0.35" />
+            <Stop offset="1" stopColor="#22C55E" stopOpacity="0" />
+          </SvgGradient>
+        </Defs>
+        <Path d={fillD} fill="url(#gradFill)" />
+        <Path d={pathD} stroke="#22C55E" strokeWidth={2.5} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        {points.map((p, i) => (
+          <Circle key={i} cx={p.x} cy={p.y} r={3} fill="#22C55E" />
+        ))}
+      </Svg>
+      {last && weights.length > 0 && (
+        <View style={styles.chartTag}>
+          <Text style={styles.chartTagText}>{latestVal}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function PhotoTile({
   uri,
   date,
+  isLatest,
   onPick,
 }: {
   uri?: string;
   date?: string;
+  isLatest?: boolean;
   onPick: () => void;
 }) {
   return (
     <TouchableOpacity
-      style={styles.photoSlot}
+      style={[
+        styles.photoTile,
+        isLatest && styles.photoTileLatest,
+      ]}
       onPress={onPick}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       testID={uri ? `photo-${date ?? "filled"}` : "photo-add"}
     >
       {uri ? (
@@ -398,153 +565,390 @@ function PhotoSlot({
           <Text style={styles.photoHint}>Tap to add</Text>
         </View>
       )}
+      {isLatest && uri && (
+        <View style={styles.latestBadge}>
+          <Text style={styles.latestBadgeText}>LATEST</Text>
+        </View>
+      )}
       {uri && date && (
-        <View style={styles.photoOverlay}>
-          <Text style={styles.photoOverlayDate}>{date}</Text>
+        <View style={styles.photoDateOverlay}>
+          <Text style={styles.photoDateText}>{date}</Text>
         </View>
       )}
     </TouchableOpacity>
   );
 }
 
-const CELL_SIZE = Platform.OS === "web" ? 38 : 40;
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20, paddingBottom: 120 },
-  title: { color: Colors.text, fontSize: 30, fontWeight: "800", letterSpacing: -0.5 },
-  subtitle: { color: Colors.textMuted, fontSize: 14, marginTop: 4, marginBottom: 20 },
-  statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
-  insightsBtn: {
+  scroll: { padding: 20, paddingBottom: 140 },
+
+  title: {
+    color: Colors.text,
+    fontSize: 38,
+    fontWeight: "800",
+    letterSpacing: -1,
     marginBottom: 20,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  },
+
+  insightsWrap: {
+    borderRadius: 22,
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+  insightsCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    padding: 16,
+    gap: 14,
   },
   insightsIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,107,53,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,107,53,0.3)",
+  },
+  insightsTitle: { color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
+  insightsSub: { color: "rgba(255,255,255,0.7)", fontSize: 13, marginTop: 2 },
+  insightsArrow: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,182,39,0.15)",
+    backgroundColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
   },
-  insightsTitle: { color: Colors.text, fontSize: 15, fontWeight: "800" },
-  insightsSub: { color: Colors.textMuted, fontSize: 12, marginTop: 2 },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 14,
-  },
-  statValue: { color: Colors.text, fontSize: 22, fontWeight: "800" },
-  statLabel: { color: Colors.textMuted, fontSize: 11, fontWeight: "600", marginTop: 4 },
-  card: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 20,
-  },
-  calHeader: {
+
+  statsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    backgroundColor: "#0F0F11",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    paddingVertical: 18,
+    marginBottom: 28,
+  },
+  statCol: { flex: 1, alignItems: "center", justifyContent: "center" },
+  statColFirst: {},
+  statValueRow: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
+  statValueBig: {
+    color: Colors.text,
+    fontSize: 30,
+    fontWeight: "800",
+    letterSpacing: -1,
+    lineHeight: 32,
+  },
+  statValueSuffix: {
+    color: Colors.text,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  statLabel: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    marginTop: 6,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 6,
+  },
+
+  sectionLabel: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 2,
     marginBottom: 12,
   },
-  iconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.surfaceElevated,
+
+  calendarCard: {
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: "#0F0F11",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 28,
+  },
+  calendarHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    flexDirection: "row",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  calendarHeaderDots: {
+    position: "absolute",
+    inset: 0 as unknown as number,
+    opacity: 0.15,
+  },
+  calendarMonth: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  calendarSessionRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+  calendarSessionNum: {
+    color: "#fff",
+    fontSize: 36,
+    fontWeight: "800",
+    letterSpacing: -1,
+    lineHeight: 38,
+  },
+  calendarSessionLabel: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  calArrows: { flexDirection: "row", gap: 8 },
+  calArrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
-  calTitle: { color: Colors.text, fontSize: 15, fontWeight: "700" },
-  weekRow: { flexDirection: "row", marginBottom: 6 },
+
+  calendarBody: { padding: 16, paddingTop: 18 },
+  weekRow: { flexDirection: "row", marginBottom: 12 },
   weekday: {
     flex: 1,
     textAlign: "center",
-    color: Colors.textDim,
+    color: Colors.textMuted,
     fontSize: 11,
     fontWeight: "700",
+    letterSpacing: 1,
   },
   grid: { flexDirection: "row", flexWrap: "wrap" },
   cell: {
     width: `${100 / 7}%`,
-    height: CELL_SIZE,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
   },
-  cellEmpty: { width: `${100 / 7}%`, height: CELL_SIZE },
-  cellDone: {},
-  cellToday: {},
-  cellText: { color: Colors.textMuted, fontSize: 13, fontWeight: "600" },
-  cellTextDone: {
-    color: Colors.text,
+  cellEmpty: { width: `${100 / 7}%`, height: 28 },
+
+  dotDone: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: Colors.primary,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    textAlign: "center",
-    textAlignVertical: "center",
-    lineHeight: 32,
-    overflow: "hidden",
-    fontWeight: "800",
   },
-  rowBetween: {
+  dotToday: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    backgroundColor: "transparent",
+  },
+  dotMissed: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,107,53,0.35)",
+  },
+  dotFuture: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+
+  legendRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  linkText: { color: Colors.primary, fontSize: 13, fontWeight: "700" },
-  weightRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  weightIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,107,53,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  weightValue: { color: Colors.text, fontSize: 22, fontWeight: "800" },
-  weightMeta: { color: Colors.textMuted, fontSize: 12, marginTop: 2 },
-  historyList: { marginTop: 14, gap: 8 },
-  historyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 8,
+    justifyContent: "space-around",
+    marginTop: 18,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  historyDate: { color: Colors.textMuted, fontSize: 13 },
-  historyValue: { color: Colors.text, fontSize: 13, fontWeight: "700" },
-  photosRow: { flexDirection: "row", gap: 10 },
-  photoSlot: {
-    flex: 1,
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 8 },
+  legendText: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+
+  weightCard: {
+    backgroundColor: "#101013",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 28,
+  },
+  weightTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  weightBadge: {
+    backgroundColor: "rgba(34,197,94,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.35)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  weightBadgeText: {
+    color: Colors.success,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  logWeightBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  logWeightText: { color: "#fff", fontSize: 14, fontWeight: "800" },
+
+  weightValueRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
+  weightBig: {
+    color: Colors.text,
+    fontSize: 44,
+    fontWeight: "800",
+    letterSpacing: -1.5,
+    lineHeight: 46,
+  },
+  weightUnit: {
+    color: Colors.textMuted,
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  weightChange: {
+    fontSize: 18,
+    fontWeight: "800",
+    marginLeft: 8,
+    marginBottom: 8,
+  },
+  weightMeta: { color: Colors.textMuted, fontSize: 12, marginTop: 2 },
+
+  weightEmpty: { paddingVertical: 16 },
+
+  chartWrap: { marginTop: 16, marginBottom: 8, position: "relative" },
+  chartTag: {
+    position: "absolute",
+    top: 6,
+    right: 0,
+    backgroundColor: "rgba(34,197,94,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.5)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  chartTagText: { color: Colors.success, fontSize: 12, fontWeight: "800" },
+
+  weightStatsRow: {
+    flexDirection: "row",
+    marginTop: 14,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  weightStatCol: { flex: 1, alignItems: "center" },
+  weightStatVal: {
+    color: Colors.text,
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  weightStatLabel: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    marginTop: 4,
+  },
+  weightStatSub: { color: Colors.textDim, fontSize: 11, marginTop: 4 },
+  weightStatDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 4 },
+
+  photosCard: {
+    backgroundColor: "#101013",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 28,
+  },
+  photosBadge: {
+    backgroundColor: "rgba(167,139,250,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.35)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  photosBadgeText: {
+    color: "#A78BFA",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  addPhotoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.4)",
+    backgroundColor: "rgba(167,139,250,0.08)",
+  },
+  addPhotoText: { color: "#A78BFA", fontSize: 14, fontWeight: "800" },
+
+  photosTitle: {
+    color: Colors.text,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginTop: 8,
+  },
+  photosSub: { color: Colors.textMuted, fontSize: 13, marginTop: 2 },
+
+  photosGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 16,
+  },
+  photoTile: {
+    width: "48%",
     aspectRatio: 3 / 4,
     borderRadius: 16,
     overflow: "hidden",
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
+    position: "relative",
+    opacity: 0.6,
+  },
+  photoTileLatest: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    opacity: 1,
   },
   photoImg: { width: "100%", height: "100%" },
   photoPlaceholder: {
@@ -553,9 +957,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
   },
-  photoLabel: { color: Colors.text, fontSize: 14, fontWeight: "700" },
   photoHint: { color: Colors.textDim, fontSize: 11 },
-  photoOverlay: {
+  latestBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(255,107,53,0.18)",
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  latestBadgeText: {
+    color: Colors.primary,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  photoDateOverlay: {
     position: "absolute",
     left: 10,
     bottom: 10,
@@ -564,8 +984,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 8,
   },
-  photoOverlayLabel: { color: Colors.text, fontSize: 12, fontWeight: "800" },
-  photoOverlayDate: { color: Colors.textMuted, fontSize: 10 },
+  photoDateText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.92)",
@@ -573,22 +993,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  modalContent: {
-    width: "100%",
-    alignItems: "center",
-    gap: 16,
-  },
+  modalContent: { width: "100%", alignItems: "center", gap: 16 },
   modalImage: {
     width: "100%",
     aspectRatio: 3 / 4,
     borderRadius: 20,
     backgroundColor: Colors.surface,
   },
-  modalActions: {
-    flexDirection: "row",
-    gap: 10,
-    width: "100%",
-  },
+  modalActions: { flexDirection: "row", gap: 10, width: "100%" },
   modalBtn: {
     flex: 1,
     flexDirection: "row",
@@ -601,26 +1013,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  modalBtnDanger: {
-    backgroundColor: "#e11d48",
-    borderColor: "#e11d48",
-  },
-  modalBtnText: {
-    color: Colors.text,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  journeyRow: { gap: 10, paddingRight: 20, paddingVertical: 4 },
-  journeyCard: {
-    width: 140,
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  journeyImg: { width: "100%", height: 180 },
-  journeyMeta: { padding: 10 },
-  journeyWeight: { color: Colors.text, fontSize: 15, fontWeight: "800" },
-  journeyDate: { color: Colors.textMuted, fontSize: 11, marginTop: 2 },
+  modalBtnDanger: { backgroundColor: "#e11d48", borderColor: "#e11d48" },
+  modalBtnText: { color: Colors.text, fontWeight: "700", fontSize: 14 },
 });
