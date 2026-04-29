@@ -13,7 +13,17 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { Send } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
+import { useChatRead } from "@/providers/ChatReadProvider";
 import AppBackground from "@/components/AppBackground";
+
+function formatTime(ts: number): string {
+  try {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  } catch {
+    return "";
+  }
+}
 
 export default function GroupChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +34,8 @@ export default function GroupChatScreen() {
   );
   const [text, setText] = useState<string>("");
   const listRef = useRef<FlatList<(typeof state.messages)[number]>>(null);
+  const isNearBottomRef = useRef<boolean>(true);
+  const { markSeen } = useChatRead();
 
   const messages = useMemo(
     () =>
@@ -34,10 +46,14 @@ export default function GroupChatScreen() {
   );
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && isNearBottomRef.current) {
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    if (id) markSeen(id, Date.now());
+  }, [id, markSeen, messages.length]);
 
   if (!group) {
     return (
@@ -77,6 +93,18 @@ export default function GroupChatScreen() {
           data={messages}
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.list}
+          onScroll={(e) => {
+            const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+            const distanceFromBottom =
+              contentSize.height - (contentOffset.y + layoutMeasurement.height);
+            isNearBottomRef.current = distanceFromBottom < 120;
+          }}
+          scrollEventThrottle={16}
+          onContentSizeChange={() => {
+            if (isNearBottomRef.current) {
+              listRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
           renderItem={({ item }) => {
             const isSelf = item.authorId === state.userId;
             return (
@@ -86,22 +114,32 @@ export default function GroupChatScreen() {
                   isSelf ? styles.bubbleRowRight : styles.bubbleRowLeft,
                 ]}
               >
-                <View
-                  style={[
-                    styles.bubble,
-                    isSelf ? styles.bubbleSelf : styles.bubbleOther,
-                  ]}
-                >
-                  {!isSelf && (
-                    <Text style={styles.bubbleAuthor}>{item.authorName}</Text>
-                  )}
-                  <Text
+                <View style={styles.bubbleColumn}>
+                  <View
                     style={[
-                      styles.bubbleText,
-                      isSelf && { color: Colors.text },
+                      styles.bubble,
+                      isSelf ? styles.bubbleSelf : styles.bubbleOther,
                     ]}
                   >
-                    {item.text}
+                    {!isSelf && (
+                      <Text style={styles.bubbleAuthor}>{item.authorName}</Text>
+                    )}
+                    <Text
+                      style={[
+                        styles.bubbleText,
+                        isSelf && { color: Colors.text },
+                      ]}
+                    >
+                      {item.text}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.timestamp,
+                      isSelf ? styles.timestampRight : styles.timestampLeft,
+                    ]}
+                  >
+                    {formatTime(item.createdAt)}
                   </Text>
                 </View>
               </View>
@@ -158,10 +196,19 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   bubbleRow: { flexDirection: "row" },
+  bubbleColumn: { maxWidth: "78%" },
+  timestamp: {
+    color: Colors.textDim,
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 3,
+    opacity: 0.6,
+  },
+  timestampLeft: { textAlign: "left", marginLeft: 6 },
+  timestampRight: { textAlign: "right", marginRight: 6 },
   bubbleRowLeft: { justifyContent: "flex-start" },
   bubbleRowRight: { justifyContent: "flex-end" },
   bubble: {
-    maxWidth: "78%",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,

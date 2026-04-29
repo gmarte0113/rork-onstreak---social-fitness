@@ -33,6 +33,7 @@ import {
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useApp } from "@/providers/AppProvider";
+import { useChatRead } from "@/providers/ChatReadProvider";
 import AppBackground from "@/components/AppBackground";
 import { GROUP_ICONS, MAX_GROUP_MEMBERS } from "@/constants/groupIcons";
 import { toDateKey } from "@/constants/workouts";
@@ -40,6 +41,7 @@ import { toDateKey } from "@/constants/workouts";
 export default function GroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, sendNudge, leaveGroup, deleteGroup, setGroupIcon, canSendNudge, refreshGroupPhotos } = useApp();
+  const { getLastSeen } = useChatRead();
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -65,6 +67,17 @@ export default function GroupScreen() {
     });
     return list;
   }, [group]);
+
+  const hasUnread = useMemo(() => {
+    if (!group) return false;
+    const lastSeen = getLastSeen(group.id);
+    return state.messages.some(
+      (m) =>
+        m.groupId === group.id &&
+        m.authorId !== state.userId &&
+        m.createdAt > lastSeen
+    );
+  }, [group, state.messages, state.userId, getLastSeen]);
 
   const todayPhotos = useMemo(
     () =>
@@ -282,6 +295,11 @@ export default function GroupScreen() {
         >
           <MessageCircle color={Colors.primary} size={18} />
           <Text style={styles.chatText}>Open chat</Text>
+          {hasUnread && (
+            <View style={styles.newPill} testID="chat-new-pill">
+              <Text style={styles.newPillText}>New</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <View
@@ -854,6 +872,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   chatText: { color: Colors.text, fontSize: 15, fontWeight: "800" },
+  newPill: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    marginLeft: 4,
+  },
+  newPillText: {
+    color: Colors.text,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
   section: {
     color: Colors.textMuted,
     fontSize: 11,

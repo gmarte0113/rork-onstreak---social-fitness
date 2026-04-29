@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider } from "@/providers/AppProvider";
+import { ChatReadProvider } from "@/providers/ChatReadProvider";
 import { Colors } from "@/constants/colors";
 import { MedalModal } from "@/components/MedalModal";
 import { ReviewPromptModal } from "@/components/ReviewPromptModal";
@@ -80,6 +81,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <AppProvider>
+            <ChatReadProvider>
             <PostHogProvider
               apiKey="phc_wMXaBaoaDp9WSVMZ2GBgj8GNc7j8Xxg34Cs54EZZX6DS"
               options={{ host: "https://us.i.posthog.com", enableSessionReplay: false }}
@@ -93,6 +95,7 @@ export default function RootLayout() {
                 <ReviewPromptModal />
               </GestureHandlerRootView>
             </PostHogProvider>
+            </ChatReadProvider>
           </AppProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
