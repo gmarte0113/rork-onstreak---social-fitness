@@ -327,9 +327,12 @@ export default function SocialScreen() {
 
   const onPressCreate = () => {
     if (!canCreateGroup()) {
+      const hasGroups = state.groups.length > 0;
       Alert.alert(
         "Pro required",
-        "Creating groups is a Pro feature. Upgrade to rally your crew.",
+        hasGroups
+          ? "Upgrade to Pro to unlock this feature and keep your group running at full power."
+          : "Creating groups is a Pro feature. Upgrade to rally your crew.",
         [
           { text: "Later", style: "cancel" },
           { text: "Upgrade", onPress: () => router.push("/paywall") },

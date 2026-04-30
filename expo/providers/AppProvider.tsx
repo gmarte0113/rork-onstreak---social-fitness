@@ -23,7 +23,7 @@ import {
   toDateKey,
 } from "@/constants/workouts";
 import { MedalId, streakMedalsEarned, programMedalId, PERSONAL_PLAN_MEDAL_ID } from "@/constants/medals";
-import { getProgram } from "@/constants/programs";
+import { getProgram, FREE_PROGRAM_ID } from "@/constants/programs";
 import {
   FocusArea,
   PlanDay,
@@ -187,6 +187,7 @@ export type AppState = {
   lastSkipUsedAt: string | null;
   personalizedPlan: PersonalizedPlan | null;
   activeEnrollment: Enrollment | null;
+  lastProEnrollment: Enrollment | null;
   hasSeenCreateGroupInfo: boolean;
   notificationsEnabled: boolean;
   lastNameChangeAt: string | null;
@@ -235,6 +236,7 @@ const DEFAULT_STATE: AppState = {
   lastSkipUsedAt: null,
   personalizedPlan: null,
   activeEnrollment: null,
+  lastProEnrollment: null,
   hasSeenCreateGroupInfo: false,
   notificationsEnabled: false,
   lastNameChangeAt: null,
@@ -801,6 +803,64 @@ export const [AppProvider, useApp] = createContextHook(() => {
       cancelled = true;
     };
   }, [supabaseUserId]);
+
+  const prevPremiumRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!hydrated) return;
+    const prev = prevPremiumRef.current;
+    const current = state.isPremium;
+    if (prev === null) {
+      prevPremiumRef.current = current;
+      if (!current && stateRef.current.activeEnrollment) {
+        const enr = stateRef.current.activeEnrollment;
+        const isProEnrollment =
+          enr.kind === "plan" ||
+          (enr.kind === "program" && enr.programId !== FREE_PROGRAM_ID && (getProgram(enr.programId)?.premium ?? false));
+        if (isProEnrollment) {
+          console.log("[AppProvider] non-pro user has pro enrollment on hydrate, downgrading", enr);
+          persist((p) => ({
+            ...p,
+            lastProEnrollment: p.lastProEnrollment ?? p.activeEnrollment,
+            activeEnrollment: { kind: "program", programId: FREE_PROGRAM_ID },
+          }));
+        }
+      }
+      return;
+    }
+    if (prev === current) return;
+    prevPremiumRef.current = current;
+    if (prev && !current) {
+      console.log("[AppProvider] pro entitlement expired, applying downgrade");
+      persist((p) => {
+        const enr = p.activeEnrollment;
+        const isProEnrollment =
+          !!enr &&
+          (enr.kind === "plan" ||
+            (enr.kind === "program" && enr.programId !== FREE_PROGRAM_ID && (getProgram(enr.programId)?.premium ?? false)));
+        if (!isProEnrollment) return p;
+        return {
+          ...p,
+          lastProEnrollment: p.lastProEnrollment ?? enr,
+          activeEnrollment: { kind: "program", programId: FREE_PROGRAM_ID },
+        };
+      });
+    } else if (!prev && current) {
+      console.log("[AppProvider] pro entitlement restored, resuming previous enrollment if any");
+      persist((p) => {
+        if (!p.lastProEnrollment) return p;
+        const restoring = p.lastProEnrollment;
+        if (restoring.kind === "program") {
+          const prog = getProgram(restoring.programId);
+          if (!prog) return { ...p, lastProEnrollment: null };
+        }
+        return {
+          ...p,
+          activeEnrollment: restoring,
+          lastProEnrollment: null,
+        };
+      });
+    }
+  }, [hydrated, state.isPremium, persist]);
 
   useEffect(() => {
     if (!hydrated) return;
