@@ -935,11 +935,6 @@ function WelcomeScreen({
     <View style={styles.screenPad}>
       <View style={{ flex: 1, justifyContent: "center" }}>
         <View style={[styles.brandRow, { marginBottom: 24 }]}>
-          <Image
-            source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/zo9z6o9js0b5a5fmtze9b.png" }}
-            style={styles.brandIconImg}
-            resizeMode="cover"
-          />
           <Text style={styles.brandText}>OnStreak</Text>
         </View>
         <Text style={styles.preLabel}>A NEW WAY TO —</Text>
