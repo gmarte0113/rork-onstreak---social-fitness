@@ -2,7 +2,7 @@
   "$schema": "https://rork.com/schema/rork.json",
   "apps": [
     {
-      "name": "OnStreak - Social Fitness",
+      "name": "OnStreak: Social Fitness",
       "path": "expo",
       "framework": "react-native"
     }
