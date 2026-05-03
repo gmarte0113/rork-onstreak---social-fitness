@@ -17,7 +17,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "app.rork.rcm4igjfxjojjhqsn9146",
       "usesAppleSignIn": true,
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "UIDeviceFamily": [
           1
@@ -35,7 +35,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "app.rork.rcm4igjfxjojjhqsn9146",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
