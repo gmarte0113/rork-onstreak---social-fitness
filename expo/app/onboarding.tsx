@@ -33,7 +33,7 @@ import {
   AlertCircle,
   Sparkles,
   Contrast,
-  Flame,
+  Share2,
   Mail,
   Lock,
   User as UserIcon,
@@ -1025,7 +1025,7 @@ function SolutionScreen({ onNext, onBack }: { onNext: () => void; onBack: () => 
         </Text>
         <View style={styles.taskCard}>
           <View style={styles.taskIconWrap}>
-            <Flame color={Colors.primary} size={22} fill={Colors.primary} />
+            <Share2 color={Colors.primary} size={22} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.taskTitle}>Today&apos;s task</Text>
@@ -1839,7 +1839,7 @@ function PaywallScreen({
         </View>
         <View style={[styles.proHeader, { marginTop: 4 }]}>
           <View style={styles.proIconWrap}>
-            <Flame color={Colors.primary} size={26} fill={Colors.primary} />
+            <Share2 color={Colors.primary} size={26} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.proTitle}>OnStreak Pro</Text>
@@ -1866,7 +1866,7 @@ function PaywallScreen({
         <PlanChip Icon={Rocket} title="90-Day Transformation" desc="Transform your body" />
         <PlanChip Icon={Zap} title="30-Day Abs" desc="Core that shows" />
         <PlanChip Icon={Trophy} title="21-Day Strong" desc="3 weeks to power" />
-        <PlanChip Icon={Flame} title="14-Day Set" desc="Reignite the spark" />
+        <PlanChip Icon={Share2} title="14-Day Set" desc="Reignite the spark" />
         <PlanChip Icon={ShieldCheck} title="7-Day Reset" desc="Start fresh" />
       </ScrollView>
 

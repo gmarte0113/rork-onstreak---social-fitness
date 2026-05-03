@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 import {
   ArrowRight,
   Check,
-  Flame,
+  Share2,
   Footprints,
   Lock,
   Sparkles,
@@ -211,7 +211,7 @@ export default function ProgramScreen() {
               </Text>
             </View>
             <View style={styles.streakPill}>
-              <Flame color={Colors.primary} size={14} fill={Colors.primary} />
+              <Share2 color={Colors.primary} size={14} />
               <Text style={styles.streakPillText}>{programStreak}</Text>
             </View>
           </View>

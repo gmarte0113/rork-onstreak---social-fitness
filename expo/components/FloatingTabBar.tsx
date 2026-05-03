@@ -11,7 +11,7 @@ import {
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { Flame, CalendarCheck, Users, Lock } from "lucide-react-native";
+import { Share2, CalendarCheck, Users, Lock } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "@/constants/colors";
@@ -19,7 +19,7 @@ import { Colors } from "@/constants/colors";
 type IconName = "index" | "progress" | "social" | "premium";
 
 const ICONS: Record<IconName, React.ComponentType<{ color: string; size: number; strokeWidth?: number }>> = {
-  index: Flame,
+  index: Share2,
   progress: CalendarCheck,
   social: Users,
   premium: Lock,
@@ -213,7 +213,7 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
             {state.routes.map((route, index) => {
               const isActive = index === activeIndex;
               const name = route.name as IconName;
-              const Icon = ICONS[name] ?? Flame;
+              const Icon = ICONS[name] ?? Share2;
               const label = LABELS[name] ?? route.name;
               return (
                 <TabItem

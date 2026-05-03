@@ -21,7 +21,6 @@ import {
   Bell,
   Camera,
   Check,
-  Flame,
   Lock,
   LogOut,
   MessageCircle,
@@ -488,7 +487,7 @@ export default function GroupScreen() {
                   {m.isSelf ? " (you)" : ""}
                 </Text>
                 <View style={styles.memberMeta}>
-                  <Flame color={Colors.primary} size={11} fill={Colors.primary} />
+                  <Share2 color={Colors.primary} size={11} />
                   <Text style={styles.memberMetaText}>
                     {m.streak} day streak · {m.totalCompletions} total
                   </Text>

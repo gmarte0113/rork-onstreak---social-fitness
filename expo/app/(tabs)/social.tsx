@@ -22,7 +22,6 @@ import {
   Bell,
   Camera,
   ChevronRight,
-  Flame,
   Image as ImageIcon,
   Medal as MedalIcon,
   Plus,
@@ -527,7 +526,7 @@ export default function SocialScreen() {
                       {u.isSelf ? " (you)" : ""}
                     </Text>
                     <View style={styles.leaderStat}>
-                      <Flame color={Colors.primary} size={12} fill={Colors.primary} />
+                      <Share2 color={Colors.primary} size={12} />
                       <Text style={styles.leaderStatText}>{u.streak}</Text>
                     </View>
                     <View style={styles.leaderStat}>
@@ -641,10 +640,9 @@ export default function SocialScreen() {
                       {m.isSelf ? " (you)" : ""}
                     </Text>
                     <View style={styles.leaderStat}>
-                      <Flame
+                      <Share2
                         color={Colors.primary}
                         size={12}
-                        fill={Colors.primary}
                       />
                       <Text style={styles.leaderStatText}>{m.streak}</Text>
                     </View>

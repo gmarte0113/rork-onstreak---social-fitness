@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Clock,
   Dumbbell,
-  Flame,
+  Share2,
   Lock,
   Sparkles,
   TrendingUp,
@@ -239,7 +239,7 @@ export default function InsightsScreen() {
             hint={period === 365 ? "all time" : `last ${period}d`}
           />
           <StatCard
-            icon={<Flame color={Colors.primary} size={16} fill={Colors.primary} />}
+            icon={<Share2 color={Colors.primary} size={16} />}
             label="CURRENT STREAK"
             value={state.streak.toString()}
             valueSuffix="DAYS"

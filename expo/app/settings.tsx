@@ -38,7 +38,7 @@ import {
   MessageSquare,
   Shield,
   Wrench,
-  Flame,
+  Share2,
   Award,
 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
@@ -408,7 +408,7 @@ export default function SettingsScreen() {
                 <View style={[styles.row, { flexDirection: "column", alignItems: "flex-start", gap: 10 }]}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 12, alignSelf: "stretch" }}>
                     <View style={styles.iconWrap}>
-                      <Flame color={Colors.primary} size={18} />
+                      <Share2 color={Colors.primary} size={18} />
                     </View>
                     <Text style={styles.rowLabel}>Override streak</Text>
                     <Text style={styles.rowValue}>{state.streak}</Text>

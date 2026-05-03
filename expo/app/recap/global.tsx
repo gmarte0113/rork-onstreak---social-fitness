@@ -10,7 +10,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Activity, Clock, Flame, Share2, Sparkles, TrendingUp } from "lucide-react-native";
+import { Activity, Clock, Share2, Sparkles, TrendingUp } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { useApp } from "@/providers/AppProvider";
@@ -90,7 +90,7 @@ export default function GlobalRecapScreen() {
           <View style={styles.statCard}>
             <CardGlow />
             <View style={styles.statIcon}>
-              <Flame color={Colors.primary} size={16} />
+              <Share2 color={Colors.primary} size={16} />
             </View>
             <View style={styles.streakRow}>
               <Text style={styles.streakValue}>{state.streak}</Text>

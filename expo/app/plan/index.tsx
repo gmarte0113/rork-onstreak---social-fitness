@@ -16,7 +16,7 @@ import {
   ArrowRight,
   Check,
   Clock,
-  Flame,
+  Share2,
   Lock,
   RefreshCw,
   RotateCcw,
@@ -221,7 +221,7 @@ export default function PlanScreen() {
               </Text>
             </View>
             <View style={styles.streakPill}>
-              <Flame color={Colors.primary} size={14} fill={Colors.primary} />
+              <Share2 color={Colors.primary} size={14} />
               <Text style={styles.streakPillText}>{state.streak}</Text>
             </View>
           </View>
